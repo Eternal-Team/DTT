@@ -46,6 +46,7 @@
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="ReLogic, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.IO.Compression" />
@@ -56,14 +57,29 @@
   <ItemGroup>
     <Compile Include="DTT.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UI\Elements\UICategory.cs" />
+    <Compile Include="UI\Elements\UIChannel.cs" />
+    <Compile Include="UI\Elements\UIGuild.cs" />
+    <Compile Include="UI\SelectUI.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="build.txt" />
     <Content Include="description.txt" />
+    <Content Include="Textures\Arrow.png" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Apps\Discord\DTTBot\DTTBot\DTTBot.csproj">
+      <Project>{2d3e3e3d-c7c3-4e4a-950d-05687d788ef3}</Project>
+      <Name>DTTBot</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BaseLib\BaseLib.csproj">
+      <Project>{6812D262-8588-4999-A01D-A6DDC71ED4C0}</Project>
+      <Name>BaseLib</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
