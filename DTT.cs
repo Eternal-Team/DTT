@@ -27,8 +27,11 @@ namespace DTT
 
 		public string SavePath => Main.SavePath + "\\DTT";
 		public string IconCache => SavePath + "\\Cache";
+		public string ConfigPath => SavePath + "\\Config.json";
 
 		public static Texture2D arrowHead;
+
+		public Config config;
 
 		public DTT()
 		{
@@ -39,36 +42,27 @@ namespace DTT
 				AutoloadSounds = true
 			};
 
-			bot = new Process
-			{
-				StartInfo =
-				{
-					FileName = "C:\\Development\\Apps\\Discord\\DTTBot\\DTTBot\\bin\\Debug\\DTTBot.exe",
-					UseShellExecute = false,
-					//CreateNoWindow = true
-				}
-			};
-
 			if (!Directory.Exists(IconCache)) Directory.CreateDirectory(IconCache);
 			else
 			{
 				DirectoryInfo di = new DirectoryInfo(IconCache);
 				foreach (FileInfo file in di.GetFiles()) file.Delete();
 			}
-		}
 
-		public override void PostUpdateInput()
-		{
-			if (server != null)
+			config = System.IO.File.Exists(ConfigPath) ? JsonConvert.DeserializeObject<Config>(System.IO.File.ReadAllText(ConfigPath)) : new Config();
+
+			bot = new Process
 			{
-				//PlayerInput.WritingText = true;
-				//Main.instance.HandleIME();
-
-				//string newString = Main.GetInputText("");
-				//server.PushMessage(newString);
-			}
+				StartInfo =
+				{
+					FileName = config.botExe,
+					UseShellExecute = false,
+					Arguments = config.token,
+					CreateNoWindow = !config.openWindow
+				}
+			};
 		}
-
+		
 		public NamedPipeServer<Tuple<string, object>> server;
 		private Process bot;
 		public DiscordClient discord;
@@ -105,7 +99,9 @@ namespace DTT
 						break;
 					case "DiscordMessage":
 						DiscordMessage message = JsonConvert.DeserializeObject<DiscordMessage>(tuple.Item2.ToString());
-						//ErrorLogger.Log($"Received message [ID: {message?.Id}]");
+						break;
+					case "TokenUpdate":
+						config.token = JsonConvert.DeserializeObject<string>(tuple.Item2.ToString());
 						break;
 				}
 			};
@@ -185,7 +181,7 @@ namespace DTT
 			arrowHead = null;
 
 			Instance = null;
-			
+
 			GC.Collect();
 		}
 
@@ -208,6 +204,8 @@ namespace DTT
 
 		private void Instance_Exiting(object sender, EventArgs e)
 		{
+			using (StreamWriter writer = System.IO.File.CreateText(ConfigPath)) writer.WriteLine(JsonConvert.SerializeObject(config));
+			
 			if (!bot.HasExited) bot.Kill();
 
 			if (server != null)
