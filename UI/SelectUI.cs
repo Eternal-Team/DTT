@@ -1,10 +1,13 @@
-﻿using BaseLib.Elements;
+﻿using System.IO;
+using BaseLib.Elements;
 using BaseLib.UI;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DTT.UI.Elements;
 using Microsoft.Xna.Framework;
 using System.Linq;
+using Microsoft.Xna.Framework.Graphics;
+using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
 
@@ -14,7 +17,7 @@ namespace DTT.UI
 	{
 		public UIElement screen = new UIElement();
 
-		public UIButton avatarUser = new UIButton(DTT.defaultAvatar);
+		public UIButton avatarUser = new UIButton(DTT.defaultIcon);
 		public UIText textUser = new UIText("");
 
 		public UITextButton buttonGuilds = new UITextButton("Guilds");
@@ -123,7 +126,7 @@ namespace DTT.UI
 			OpenPanel(listeningElement);
 
 			gridSelect.Clear();
-			foreach (DiscordGuild guild in DTT.guilds.Keys)
+			foreach (DiscordGuild guild in DTT.Instance.currentUser.Guilds.Values)
 			{
 				UIGuild uiGuild = new UIGuild(guild);
 				uiGuild.Width.Precent = 1;
@@ -139,6 +142,16 @@ namespace DTT.UI
 					DTT.Instance.currentChannel = guild.GetDefaultChannel();
 					DTT.Instance.ChangeGuild();
 				};
+				string path = $"{DTT.Guilds}{guild.Id}.png";
+				Utility.DownloadImage(path, guild.IconUrl, () =>
+				{
+					using (MemoryStream buffer = new MemoryStream(File.ReadAllBytes(path)))
+					{
+						Texture2D texture = Texture2D.FromStream(Main.instance.GraphicsDevice, buffer);
+						texture.Name = guild.Id.ToString();
+						uiGuild.texture = texture;
+					}
+				});
 				gridSelect.Add(uiGuild);
 			}
 		}

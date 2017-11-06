@@ -11,40 +11,19 @@ namespace DTT
 {
 	public static class Utility
 	{
-		public static void DownloadImage(string path, string url, Action<object, AsyncCompletedEventArgs> action = null)
+		public static void DownloadImage(string path, string url, Action action = null)
 		{
 			if (!File.Exists(path))
 			{
 				using (WebClient client = new WebClient())
 				{
-					client.DownloadFileCompleted += (a, b) => action?.Invoke(a, b);
+					client.DownloadFileCompleted += (a, b) => action?.Invoke();
 					client.DownloadFileAsync(new Uri(url), path, path);
 				}
 			}
+			else action?.Invoke();
 		}
-
-		/// <summary>
-		/// Downloads icons for all guilds
-		/// </summary>
-		public static void InitGuilds()
-		{
-			foreach (KeyValuePair<ulong, DiscordGuild> guild in DTT.Instance.currentUser.Guilds)
-			{
-				string path = $"{DTT.IconCache}\\Guilds\\{guild.Key}.png";
-
-				DownloadImage(path, guild.Value.IconUrl, (a, b) =>
-				 {
-					 using (MemoryStream buffer = new MemoryStream(File.ReadAllBytes(path)))
-					 {
-						 Texture2D texture = Texture2D.FromStream(Main.instance.GraphicsDevice, buffer);
-						 texture.Name = guild.Key.ToString();
-
-						 DTT.guilds.Add(guild.Value, texture);
-					 }
-				 });
-			}
-		}
-
+		
 		public static void AvatarFromPath(DiscordUser user, string path)
 		{
 			using (MemoryStream buffer = new MemoryStream(File.ReadAllBytes(path)))

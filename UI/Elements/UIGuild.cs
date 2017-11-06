@@ -12,7 +12,7 @@ namespace DTT.UI.Elements
 	public class UIGuild : BaseElement
 	{
 		public DiscordGuild guild;
-		private Texture2D texture;
+		public Texture2D texture;
 		private float padding;
 		public Color color = Color.White;
 
@@ -20,7 +20,7 @@ namespace DTT.UI.Elements
 		{
 			this.guild = guild;
 			this.padding = padding;
-			texture = DTT.guilds[guild];
+			texture = DTT.defaultIcon;
 		}
 
 		protected override void DrawSelf(SpriteBatch spriteBatch)

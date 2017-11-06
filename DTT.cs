@@ -25,15 +25,15 @@ namespace DTT
 		public UserInterface ISelectUI;
 
 		public static string SavePath => Main.SavePath + "\\DTT";
-		public static string IconCache => SavePath + "\\Cache";
+		public static string Guilds => SavePath + "\\Cache\\Guilds\\";
+		public static string Users => SavePath + "\\Cache\\Users\\";
 		public static string ConfigPath => SavePath + "\\Config.json";
 
 		public NamedPipeServer<Tuple<string, object>> server;
 		private Process bot;
-		public static Texture2D defaultAvatar;
+		public static Texture2D defaultIcon;
 
 		public DiscordClient currentUser;
-		public static Dictionary<DiscordGuild, Texture2D> guilds = new Dictionary<DiscordGuild, Texture2D>();
 		public DiscordGuild currentGuild;
 		public DiscordChannel currentChannel;
 
@@ -102,21 +102,20 @@ namespace DTT
 
 		private Task Ready(ReadyEventArgs e)
 		{
-			Utility.InitGuilds();
-
 			currentGuild = currentUser.Guilds.ElementAt(0).Value;
 			currentChannel = currentGuild.GetDefaultChannel();
 
 			ChangeGuild();
 
-			Utility.DownloadImage($"{IconCache}\\Users\\{currentUser.CurrentUser.Id}.png", currentUser.CurrentUser.AvatarUrl, (a, b) =>
-			 {
-				 Utility.AvatarFromPath(currentUser.CurrentUser, b.UserState.ToString());
+			string path = $"{Users}{currentUser.CurrentUser.Id}.png";
+			Utility.DownloadImage(path, currentUser.CurrentUser.AvatarUrl, () =>
+			{
+				Utility.AvatarFromPath(currentUser.CurrentUser, path);
 
-				 SelectUI.avatarUser.texture = avatars[currentUser.CurrentUser.Id];
-				 SelectUI.textUser.SetText(currentUser.CurrentUser.Username);
-				 SelectUI.avatarUser.RecalculateChildren();
-			 });
+				SelectUI.avatarUser.texture = avatars[currentUser.CurrentUser.Id];
+				SelectUI.textUser.SetText(currentUser.CurrentUser.Username);
+				SelectUI.avatarUser.RecalculateChildren();
+			});
 
 			return Task.Delay(0);
 		}
@@ -128,20 +127,8 @@ namespace DTT
 			Instance = this;
 
 			Directory.CreateDirectory(SavePath);
-			Directory.CreateDirectory(IconCache);
-			Directory.CreateDirectory(IconCache + "\\Guilds");
-			Directory.CreateDirectory(IconCache + "\\Users");
-
-			if (Directory.Exists(IconCache + "\\Guilds"))
-			{
-				DirectoryInfo di = new DirectoryInfo(IconCache + "\\Guilds");
-				foreach (FileInfo file in di.GetFiles()) file.Delete();
-			}
-			if (Directory.Exists(IconCache + "\\Users"))
-			{
-				DirectoryInfo di = new DirectoryInfo(IconCache + "\\Users");
-				foreach (FileInfo file in di.GetFiles()) file.Delete();
-			}
+			Directory.CreateDirectory(Users);
+			Directory.CreateDirectory(Guilds);
 
 			config = System.IO.File.Exists(ConfigPath) ? JsonConvert.DeserializeObject<Config>(System.IO.File.ReadAllText(ConfigPath)) : new Config();
 
@@ -161,7 +148,7 @@ namespace DTT
 
 			InitComms();
 
-			defaultAvatar = ModLoader.GetTexture("DTT/Textures/DefaultAvatar");
+			defaultIcon = ModLoader.GetTexture("DTT/Textures/DefaultAvatar");
 
 			if (!Main.dedServ)
 			{
@@ -176,6 +163,17 @@ namespace DTT
 		{
 			Main.instance.Exiting -= OnExit;
 			Main.OnTick -= OnTick;
+
+			if (Directory.Exists(Guilds))
+			{
+				DirectoryInfo di = new DirectoryInfo(Guilds);
+				foreach (FileInfo file in di.GetFiles()) file.Delete();
+			}
+			if (Directory.Exists(Users))
+			{
+				DirectoryInfo di = new DirectoryInfo(Users);
+				foreach (FileInfo file in di.GetFiles()) file.Delete();
+			}
 
 			Instance = null;
 
@@ -205,11 +203,11 @@ namespace DTT
 			{
 				DiscordUser user = AvatarQueue.Dequeue();
 				string url = user.GetAvatarUrl(ImageFormat.Png, 256);
-				string path = $"{IconCache}\\Users\\{user.Id}.png";
+				string path = $"{Users}{user.Id}.png";
 
-				Utility.DownloadImage(path, url, (a, e) =>
+				Utility.DownloadImage(path, url, () =>
 				{
-					Utility.AvatarFromPath(user, e.UserState.ToString());
+					Utility.AvatarFromPath(user, path);
 				});
 			}
 		}
