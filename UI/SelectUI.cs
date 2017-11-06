@@ -4,7 +4,6 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DTT.UI.Elements;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using System.Linq;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
@@ -14,6 +13,9 @@ namespace DTT.UI
 	public class SelectUI : BaseUI
 	{
 		public UIElement screen = new UIElement();
+
+		public UIButton avatarUser = new UIButton(DTT.defaultAvatar);
+		public UIText textUser = new UIText("");
 
 		public UITextButton buttonGuilds = new UITextButton("Guilds");
 		public UITextButton buttonServers = new UITextButton("Channels");
@@ -30,15 +32,24 @@ namespace DTT.UI
 
 			buttonGuilds.Width.Pixels = 100;
 			buttonGuilds.Height.Pixels = 50;
-			buttonGuilds.Top.Set(-50, 1);
+			buttonGuilds.Top.Set(-98, 1);
 			buttonGuilds.OnClick += ButtonGuilds_OnClick;
 			screen.Append(buttonGuilds);
 
 			buttonServers.Width.Pixels = 100;
 			buttonServers.Height.Pixels = 50;
-			buttonServers.Top.Set(-108, 1);
+			buttonServers.Top.Set(-156, 1);
 			buttonServers.OnClick += ButtonServers_OnClick;
 			screen.Append(buttonServers);
+
+			avatarUser.Width.Pixels = 40;
+			avatarUser.Height.Pixels = 40;
+			avatarUser.Top.Set(-40, 1);
+			Append(avatarUser);
+
+			textUser.Left.Set(8, 1);
+			textUser.VAlign = 0.5f;
+			avatarUser.Append(textUser);
 
 			panelSelect.Width.Pixels = 250;
 			panelSelect.Height.Pixels = 350;
@@ -86,11 +97,6 @@ namespace DTT.UI
 					UICategory uiCategory = new UICategory(channel);
 					uiCategory.Width.Precent = 1;
 					uiCategory.Height.Pixels = 40;
-					uiCategory.OnClick += (mouseEvent, element) =>
-					{
-						uiCategory.Expand();
-						gridSelect.RecalculateChildren();
-					};
 
 					foreach (DiscordChannel child in channel.Children)
 					{
@@ -117,11 +123,12 @@ namespace DTT.UI
 			OpenPanel(listeningElement);
 
 			gridSelect.Clear();
-			foreach (DiscordGuild guild in DTT.Instance.discord.Guilds.Values)
+			foreach (DiscordGuild guild in DTT.guilds.Keys)
 			{
 				UIGuild uiGuild = new UIGuild(guild);
 				uiGuild.Width.Precent = 1;
 				uiGuild.Height.Pixels = 40;
+				uiGuild.color = DTT.Instance.currentGuild.Id == guild.Id ? Color.Lime : Color.White;
 				uiGuild.OnClick += (a, b) =>
 				{
 					DTT.Instance.currentGuild = guild;
@@ -134,13 +141,6 @@ namespace DTT.UI
 				};
 				gridSelect.Add(uiGuild);
 			}
-		}
-
-		public override void Draw(SpriteBatch spriteBatch)
-		{
-
-			base.Draw(spriteBatch);
-
 		}
 	}
 }

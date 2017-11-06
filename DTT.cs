@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using Terraria;
 using Terraria.ModLoader;
@@ -25,11 +24,21 @@ namespace DTT
 		public SelectUI SelectUI;
 		public UserInterface ISelectUI;
 
-		public string SavePath => Main.SavePath + "\\DTT";
-		public string IconCache => SavePath + "\\Cache";
-		public string ConfigPath => SavePath + "\\Config.json";
+		public static string SavePath => Main.SavePath + "\\DTT";
+		public static string IconCache => SavePath + "\\Cache";
+		public static string ConfigPath => SavePath + "\\Config.json";
 
-		public static Texture2D arrowHead;
+		public NamedPipeServer<Tuple<string, object>> server;
+		private Process bot;
+		public static Texture2D defaultAvatar;
+
+		public DiscordClient currentUser;
+		public static Dictionary<DiscordGuild, Texture2D> guilds = new Dictionary<DiscordGuild, Texture2D>();
+		public DiscordGuild currentGuild;
+		public DiscordChannel currentChannel;
+
+		public static Dictionary<ulong, Texture2D> avatars = new Dictionary<ulong, Texture2D>();
+		public static Queue<DiscordUser> AvatarQueue = new Queue<DiscordUser>();
 
 		public Config config;
 
@@ -41,34 +50,7 @@ namespace DTT
 				AutoloadGores = true,
 				AutoloadSounds = true
 			};
-
-			if (!Directory.Exists(IconCache)) Directory.CreateDirectory(IconCache);
-			else
-			{
-				DirectoryInfo di = new DirectoryInfo(IconCache);
-				foreach (FileInfo file in di.GetFiles()) file.Delete();
-			}
-
-			config = System.IO.File.Exists(ConfigPath) ? JsonConvert.DeserializeObject<Config>(System.IO.File.ReadAllText(ConfigPath)) : new Config();
-
-			bot = new Process
-			{
-				StartInfo =
-				{
-					FileName = config.botExe,
-					UseShellExecute = false,
-					Arguments = config.token,
-					CreateNoWindow = !config.openWindow
-				}
-			};
 		}
-		
-		public NamedPipeServer<Tuple<string, object>> server;
-		private Process bot;
-		public DiscordClient discord;
-		public DiscordGuild currentGuild;
-		public DiscordChannel currentChannel;
-		public Dictionary<ulong, Texture2D> guildIcons = new Dictionary<ulong, Texture2D>();
 
 		public void InitComms()
 		{
@@ -89,13 +71,13 @@ namespace DTT
 				switch (tuple.Item1)
 				{
 					case "DiscordClient":
-						discord = new DiscordClient(new DiscordConfiguration
+						currentUser = new DiscordClient(new DiscordConfiguration
 						{
 							Token = tuple.Item2.ToString(),
 							TokenType = TokenType.User
 						});
-						discord.Ready += Ready;
-						Task.Run(discord.ConnectAsync);
+						currentUser.Ready += Ready;
+						Task.Run(currentUser.ConnectAsync);
 						break;
 					case "DiscordMessage":
 						DiscordMessage message = JsonConvert.DeserializeObject<DiscordMessage>(tuple.Item2.ToString());
@@ -118,37 +100,23 @@ namespace DTT
 			server.PushMessage(new Tuple<string, object>("UpdateCurrent", new Tuple<ulong, ulong>(currentGuild.Id, currentChannel.Id)));
 		}
 
-		/// <summary>
-		/// Downloads icons for all guilds
-		/// </summary>
-		public void DownloadGuildIcons()
-		{
-			foreach (KeyValuePair<ulong, DiscordGuild> guild in discord.Guilds)
-			{
-				string path = $"{IconCache}\\{guild.Key}.png";
-				if (!System.IO.File.Exists(path))
-				{
-					using (WebClient client = new WebClient())
-					{
-						client.DownloadFile(new Uri(guild.Value.IconUrl), path);
-						using (MemoryStream buffer = new MemoryStream(System.IO.File.ReadAllBytes(path)))
-						{
-							guildIcons[guild.Key] = Texture2D.FromStream(Main.instance.GraphicsDevice, buffer);
-							guildIcons[guild.Key].Name = guild.Key.ToString();
-						}
-					}
-				}
-			}
-		}
-
 		private Task Ready(ReadyEventArgs e)
 		{
-			DownloadGuildIcons();
+			Utility.InitGuilds();
 
-			currentGuild = discord.Guilds.ElementAt(0).Value;
+			currentGuild = currentUser.Guilds.ElementAt(0).Value;
 			currentChannel = currentGuild.GetDefaultChannel();
 
 			ChangeGuild();
+
+			Utility.DownloadImage($"{IconCache}\\Users\\{currentUser.CurrentUser.Id}.png", currentUser.CurrentUser.AvatarUrl, (a, b) =>
+			 {
+				 Utility.AvatarFromPath(currentUser.CurrentUser, b.UserState.ToString());
+
+				 SelectUI.avatarUser.texture = avatars[currentUser.CurrentUser.Id];
+				 SelectUI.textUser.SetText(currentUser.CurrentUser.Username);
+				 SelectUI.avatarUser.RecalculateChildren();
+			 });
 
 			return Task.Delay(0);
 		}
@@ -159,11 +127,41 @@ namespace DTT
 
 			Instance = this;
 
-			arrowHead = ModLoader.GetTexture("DTT/Textures/Arrow");
+			Directory.CreateDirectory(SavePath);
+			Directory.CreateDirectory(IconCache);
+			Directory.CreateDirectory(IconCache + "\\Guilds");
+			Directory.CreateDirectory(IconCache + "\\Users");
 
-			Main.instance.Exiting += Instance_Exiting;
+			if (Directory.Exists(IconCache + "\\Guilds"))
+			{
+				DirectoryInfo di = new DirectoryInfo(IconCache + "\\Guilds");
+				foreach (FileInfo file in di.GetFiles()) file.Delete();
+			}
+			if (Directory.Exists(IconCache + "\\Users"))
+			{
+				DirectoryInfo di = new DirectoryInfo(IconCache + "\\Users");
+				foreach (FileInfo file in di.GetFiles()) file.Delete();
+			}
+
+			config = System.IO.File.Exists(ConfigPath) ? JsonConvert.DeserializeObject<Config>(System.IO.File.ReadAllText(ConfigPath)) : new Config();
+
+			bot = new Process
+			{
+				StartInfo =
+				{
+					FileName = config.botExe,
+					UseShellExecute = false,
+					Arguments = config.token,
+					CreateNoWindow = !config.openWindow
+				}
+			};
+
+			Main.instance.Exiting += OnExit;
+			Main.OnTick += OnTick;
 
 			InitComms();
+
+			defaultAvatar = ModLoader.GetTexture("DTT/Textures/DefaultAvatar");
 
 			if (!Main.dedServ)
 			{
@@ -176,9 +174,8 @@ namespace DTT
 
 		public override void Unload()
 		{
-			Main.instance.Exiting -= Instance_Exiting;
-
-			arrowHead = null;
+			Main.instance.Exiting -= OnExit;
+			Main.OnTick -= OnTick;
 
 			Instance = null;
 
@@ -202,10 +199,25 @@ namespace DTT
 			}
 		}
 
-		private void Instance_Exiting(object sender, EventArgs e)
+		public void OnTick()
+		{
+			while (AvatarQueue.Count > 0)
+			{
+				DiscordUser user = AvatarQueue.Dequeue();
+				string url = user.GetAvatarUrl(ImageFormat.Png, 256);
+				string path = $"{IconCache}\\Users\\{user.Id}.png";
+
+				Utility.DownloadImage(path, url, (a, e) =>
+				{
+					Utility.AvatarFromPath(user, e.UserState.ToString());
+				});
+			}
+		}
+
+		private void OnExit(object sender, EventArgs e)
 		{
 			using (StreamWriter writer = System.IO.File.CreateText(ConfigPath)) writer.WriteLine(JsonConvert.SerializeObject(config));
-			
+
 			if (!bot.HasExited) bot.Kill();
 
 			if (server != null)

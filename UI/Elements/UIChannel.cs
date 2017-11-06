@@ -25,8 +25,8 @@ namespace DTT.UI.Elements
 		{
 			CalculatedStyle dimensions = GetDimensions();
 
-			spriteBatch.DrawPanel(dimensions, Utility.backgroundTexture, BaseUI.panelColor);
-			spriteBatch.DrawPanel(dimensions, Utility.borderTexture, Color.Black);
+			spriteBatch.DrawPanel(dimensions, BaseLib.Utility.Utility.backgroundTexture, BaseUI.panelColor);
+			spriteBatch.DrawPanel(dimensions, BaseLib.Utility.Utility.borderTexture, Color.Black);
 
 			Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, "#" + channel.Name, dimensions.X + 8, dimensions.Y + dimensions.Height / 2 - 10, color, Color.Black, Vector2.Zero);
 		}

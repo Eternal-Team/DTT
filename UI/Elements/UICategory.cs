@@ -1,12 +1,13 @@
-﻿using System.Collections.Generic;
-using BaseLib.Elements;
+﻿using BaseLib.Elements;
 using BaseLib.UI;
 using BaseLib.Utility;
 using DSharpPlus.Entities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System.Collections.Generic;
+using System.Linq;
 using Terraria;
-using Terraria.GameContent.UI.Elements;
+using Terraria.ID;
 using Terraria.UI;
 
 namespace DTT.UI.Elements
@@ -35,19 +36,36 @@ namespace DTT.UI.Elements
 			Recalculate();
 		}
 
+		public override void Click(UIMouseEvent evt)
+		{
+			CalculatedStyle dimensions = GetDimensions();
+			Rectangle hitbox = new CalculatedStyle(dimensions.X, dimensions.Y, dimensions.Width, 40).ToRectangle();
+
+			if (hitbox.Contains(evt.MousePosition))
+			{
+				Main.PlaySound(SoundID.MenuTick);
+				
+				Expand();
+				DTT.Instance.SelectUI.gridSelect.RecalculateChildren();
+			}
+			else
+			{
+				Main.PlaySound(SoundID.MenuTick);
+				
+				UIChannel child = (UIChannel)items.FirstOrDefault(x => x.GetDimensions().ToRectangle().Contains(evt.MousePosition));
+				if (child != null) Main.NewText(child.channel.Name);
+			}
+		}
+
 		protected override void DrawSelf(SpriteBatch spriteBatch)
 		{
 			CalculatedStyle dimensions = GetDimensions();
 			CalculatedStyle drawDim = new CalculatedStyle(dimensions.X, dimensions.Y, dimensions.Width, 40);
 
-			spriteBatch.DrawPanel(drawDim, Utility.backgroundTexture, BaseUI.panelColor);
-			spriteBatch.DrawPanel(drawDim, Utility.borderTexture, Color.Black);
+			spriteBatch.DrawPanel(drawDim, BaseLib.Utility.Utility.backgroundTexture, BaseUI.panelColor);
+			spriteBatch.DrawPanel(drawDim, BaseLib.Utility.Utility.borderTexture, Color.Black);
 
-			SpriteEffects effects = expanded ? SpriteEffects.None : SpriteEffects.FlipVertically;
-
-			spriteBatch.Draw(DTT.arrowHead, new Rectangle((int)(drawDim.X + 8), (int)(drawDim.Y + drawDim.Height / 2 - 6), 20, 12), null, Color.Black, 0f, Vector2.Zero, effects, 0f);
-
-			Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, Text, drawDim.X + 34, drawDim.Y + drawDim.Height / 2 - 10f, Color.White, Color.Black, Vector2.Zero);
+			Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, Text, drawDim.X + 8, drawDim.Y + drawDim.Height / 2 - 10f, Color.White, Color.Black, Vector2.Zero);
 
 			if (expanded)
 			{

@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Terraria;
 
 namespace DTT
 {
@@ -8,7 +9,7 @@ namespace DTT
 		public string token = string.Empty;
 
 		[JsonProperty]
-		public string botExe = DTT.Instance.SavePath + "\\DTTBot.exe";
+		public string botExe = Main.SavePath + "\\DTT\\DTTBot.exe";
 
 		[JsonProperty]
 		public bool openWindow = true;

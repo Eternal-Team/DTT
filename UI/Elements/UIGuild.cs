@@ -20,15 +20,15 @@ namespace DTT.UI.Elements
 		{
 			this.guild = guild;
 			this.padding = padding;
-			texture = DTT.Instance.guildIcons[guild.Id];
+			texture = DTT.guilds[guild];
 		}
 
 		protected override void DrawSelf(SpriteBatch spriteBatch)
 		{
 			CalculatedStyle dimensions = GetDimensions();
 
-			spriteBatch.DrawPanel(dimensions, Utility.backgroundTexture, BaseUI.panelColor);
-			spriteBatch.DrawPanel(dimensions, Utility.borderTexture, Color.Black);
+			spriteBatch.DrawPanel(dimensions, BaseLib.Utility.Utility.backgroundTexture, BaseUI.panelColor);
+			spriteBatch.DrawPanel(dimensions, BaseLib.Utility.Utility.borderTexture, Color.Black);
 
 			spriteBatch.Draw(texture, new Rectangle((int)(dimensions.X + padding), (int)(dimensions.Y + padding), (int)(dimensions.Height - padding * 2), (int)(dimensions.Height - padding * 2)), Color.White);
 

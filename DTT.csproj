@@ -62,6 +62,7 @@
     <Compile Include="UI\Elements\UIChannel.cs" />
     <Compile Include="UI\Elements\UIGuild.cs" />
     <Compile Include="UI\SelectUI.cs" />
+    <Compile Include="Utility.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="build.txt" />
