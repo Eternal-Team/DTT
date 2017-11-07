@@ -27,7 +27,7 @@ namespace DTT
 					};
 				}
 			}
-			else action?.Invoke(cache[url]);
+			else if (cache.ContainsKey(url)) action?.Invoke(cache[url]);
 		}
 
 		public static Texture2D ToTexture(this string path)
@@ -36,13 +36,7 @@ namespace DTT
 			using (MemoryStream buffer = new MemoryStream(File.ReadAllBytes(path))) texture = Texture2D.FromStream(Main.instance.GraphicsDevice, buffer);
 			return texture;
 		}
-
-		//public static void AvatarFromPath(DiscordUser user, string path)
-		//{
-		//	DTT.avatars[user.Id] = path.ToTexture();
-		//	DTT.avatars[user.Id].Name = user.Username;
-		//}
-
+		
 		/// <summary>
 		/// Relays a message to the bot to update its current guild and channel
 		/// </summary>

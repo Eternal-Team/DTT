@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Xna.Framework.Content;
 using Terraria;
 using Terraria.ModLoader;
 using Terraria.UI;
@@ -23,6 +24,8 @@ namespace DTT
 
 		public SelectUI SelectUI;
 		public UserInterface ISelectUI;
+
+		public ContentManager manager = new ContentManager(Main.instance.Content.ServiceProvider, "C:\\Development\\Terraria\\Mods\\Repository\\DTT\\Shaders");
 
 		public static string SavePath => Main.SavePath + "\\DTT";
 		public static string Guilds => SavePath + "\\Cache\\Guilds\\";
@@ -136,11 +139,14 @@ namespace DTT
 			return Task.Delay(0);
 		}
 
+		public static Effect circleShader;
 		public override void Load()
 		{
 			ErrorLogger.ClearLog();
 
 			Instance = this;
+
+			circleShader = GetEffect("Effects/CircleShader");
 
 			Directory.CreateDirectory(SavePath);
 			Directory.CreateDirectory(Guilds);
