@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Terraria;
 using Terraria.ID;
 using Terraria.UI;
@@ -44,16 +45,16 @@ namespace DTT.UI.Elements
 			if (hitbox.Contains(evt.MousePosition))
 			{
 				Main.PlaySound(SoundID.MenuTick);
-				
+
 				Expand();
 				DTT.Instance.SelectUI.gridSelect.RecalculateChildren();
 			}
 			else
 			{
 				Main.PlaySound(SoundID.MenuTick);
-				
+
 				UIChannel child = (UIChannel)items.FirstOrDefault(x => x.GetDimensions().ToRectangle().Contains(evt.MousePosition));
-				if (child != null) Main.NewText(child.channel.Name);
+				child?.Click(evt);
 			}
 		}
 

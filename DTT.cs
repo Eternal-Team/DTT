@@ -27,6 +27,7 @@ namespace DTT
 		public static string SavePath => Main.SavePath + "\\DTT";
 		public static string Guilds => SavePath + "\\Cache\\Guilds\\";
 		public static string Users => SavePath + "\\Cache\\Users\\";
+		public static string PMs => SavePath + "\\Cache\\PMs\\";
 		public static string ConfigPath => SavePath + "\\Config.json";
 
 		public NamedPipeServer<Tuple<string, object>> server;
@@ -37,8 +38,11 @@ namespace DTT
 		public DiscordGuild currentGuild;
 		public DiscordChannel currentChannel;
 
-		public static Dictionary<ulong, Texture2D> avatars = new Dictionary<ulong, Texture2D>();
-		public static Queue<DiscordUser> AvatarQueue = new Queue<DiscordUser>();
+		//public static Dictionary<ulong, Texture2D> avatars = new Dictionary<ulong, Texture2D>();
+		//public static Queue<DiscordUser> AvatarQueue = new Queue<DiscordUser>();
+
+		// create -> add, delete -> remove, update -> change
+		public static List<DiscordMessage> log = new List<DiscordMessage>();
 
 		public Config config;
 
@@ -54,6 +58,14 @@ namespace DTT
 
 		public void InitComms()
 		{
+			currentUser = new DiscordClient(new DiscordConfiguration
+			{
+				Token = config.token,
+				TokenType = TokenType.User
+			});
+			currentUser.Ready += Ready;
+			Task.Run(currentUser.ConnectAsync);
+
 			server = new NamedPipeServer<Tuple<string, object>>("DTTPipe");
 
 			server.ClientConnected += delegate (NamedPipeConnection<Tuple<string, object>, Tuple<string, object>> conn)
@@ -70,17 +82,11 @@ namespace DTT
 			{
 				switch (tuple.Item1)
 				{
-					case "DiscordClient":
-						currentUser = new DiscordClient(new DiscordConfiguration
-						{
-							Token = tuple.Item2.ToString(),
-							TokenType = TokenType.User
-						});
-						currentUser.Ready += Ready;
-						Task.Run(currentUser.ConnectAsync);
-						break;
-					case "DiscordMessage":
+					case "DiscordMessageCreate":
+					case "DiscordMessageDelete":
+					case "DiscordMessageUpdate":
 						DiscordMessage message = JsonConvert.DeserializeObject<DiscordMessage>(tuple.Item2.ToString());
+						HandleMessage(message, tuple.Item1.Substring(14));
 						break;
 					case "TokenUpdate":
 						config.token = JsonConvert.DeserializeObject<string>(tuple.Item2.ToString());
@@ -92,12 +98,22 @@ namespace DTT
 			bot.Start();
 		}
 
-		/// <summary>
-		/// Relays a message to the bot to update its current guild and channel
-		/// </summary>
-		public void ChangeGuild()
+		public void HandleMessage(DiscordMessage message, string mode)
 		{
-			server.PushMessage(new Tuple<string, object>("UpdateCurrent", new Tuple<ulong, ulong>(currentGuild.Id, currentChannel.Id)));
+			switch (mode)
+			{
+				case "Create":
+					log.Add(message);
+					if (log.Count > 50) log.RemoveAt(0);
+					break;
+				case "Delete":
+					log.Remove(message);
+					break;
+				case "Update":
+					int index = log.FindIndex(x => x.Id == message.Id);
+					if (index != -1) log[index] = message;
+					break;
+			}
 		}
 
 		private Task Ready(ReadyEventArgs e)
@@ -105,14 +121,14 @@ namespace DTT
 			currentGuild = currentUser.Guilds.ElementAt(0).Value;
 			currentChannel = currentGuild.GetDefaultChannel();
 
-			ChangeGuild();
+			Utility.UpdateCurrent();
 
 			string path = $"{Users}{currentUser.CurrentUser.Id}.png";
-			Utility.DownloadImage(path, currentUser.CurrentUser.AvatarUrl, () =>
+			Utility.DownloadImage(path, currentUser.CurrentUser.AvatarUrl, texture =>
 			{
-				Utility.AvatarFromPath(currentUser.CurrentUser, path);
+				//avatars[currentUser.CurrentUser.Id] = texture;
 
-				SelectUI.avatarUser.texture = avatars[currentUser.CurrentUser.Id];
+				SelectUI.avatarUser.texture = texture;
 				SelectUI.textUser.SetText(currentUser.CurrentUser.Username);
 				SelectUI.avatarUser.RecalculateChildren();
 			});
@@ -127,8 +143,9 @@ namespace DTT
 			Instance = this;
 
 			Directory.CreateDirectory(SavePath);
-			Directory.CreateDirectory(Users);
 			Directory.CreateDirectory(Guilds);
+			Directory.CreateDirectory(PMs);
+			Directory.CreateDirectory(Users);
 
 			config = System.IO.File.Exists(ConfigPath) ? JsonConvert.DeserializeObject<Config>(System.IO.File.ReadAllText(ConfigPath)) : new Config();
 
@@ -164,17 +181,6 @@ namespace DTT
 			Main.instance.Exiting -= OnExit;
 			Main.OnTick -= OnTick;
 
-			if (Directory.Exists(Guilds))
-			{
-				DirectoryInfo di = new DirectoryInfo(Guilds);
-				foreach (FileInfo file in di.GetFiles()) file.Delete();
-			}
-			if (Directory.Exists(Users))
-			{
-				DirectoryInfo di = new DirectoryInfo(Users);
-				foreach (FileInfo file in di.GetFiles()) file.Delete();
-			}
-
 			Instance = null;
 
 			GC.Collect();
@@ -199,21 +205,34 @@ namespace DTT
 
 		public void OnTick()
 		{
-			while (AvatarQueue.Count > 0)
-			{
-				DiscordUser user = AvatarQueue.Dequeue();
-				string url = user.GetAvatarUrl(ImageFormat.Png, 256);
-				string path = $"{Users}{user.Id}.png";
+			//while (AvatarQueue.Count > 0)
+			//{
+			//	DiscordUser user = AvatarQueue.Dequeue();
+			//	string url = user.GetAvatarUrl(ImageFormat.Png, 256);
+			//	string path = $"{Users}{user.Id}.png";
 
-				Utility.DownloadImage(path, url, () =>
-				{
-					Utility.AvatarFromPath(user, path);
-				});
-			}
+			//	Utility.DownloadImage(path, url, texture => avatars[user.Id] = texture);
+			//}
 		}
 
 		private void OnExit(object sender, EventArgs e)
 		{
+			if (Directory.Exists(Guilds))
+			{
+				DirectoryInfo di = new DirectoryInfo(Guilds);
+				foreach (FileInfo file in di.GetFiles()) file.Delete();
+			}
+			if (Directory.Exists(PMs))
+			{
+				DirectoryInfo di = new DirectoryInfo(PMs);
+				foreach (FileInfo file in di.GetFiles()) file.Delete();
+			}
+			if (Directory.Exists(Users))
+			{
+				DirectoryInfo di = new DirectoryInfo(Users);
+				foreach (FileInfo file in di.GetFiles()) file.Delete();
+			}
+
 			using (StreamWriter writer = System.IO.File.CreateText(ConfigPath)) writer.WriteLine(JsonConvert.SerializeObject(config));
 
 			if (!bot.HasExited) bot.Kill();
