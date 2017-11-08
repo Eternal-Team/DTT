@@ -63,13 +63,13 @@
     <Compile Include="UI\Elements\UIChannel.cs" />
     <Compile Include="UI\Elements\UIDMChannel.cs" />
     <Compile Include="UI\Elements\UIGuild.cs" />
+    <Compile Include="UI\Elements\UIUser.cs" />
     <Compile Include="UI\SelectUI.cs" />
     <Compile Include="Utility.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="build.txt" />
     <Content Include="description.txt" />
-    <Content Include="Effects\CircleShader.hlsl" />
     <Content Include="Textures\Arrow.png" />
   </ItemGroup>
   <ItemGroup>

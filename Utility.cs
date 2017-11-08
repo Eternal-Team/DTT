@@ -1,9 +1,12 @@
-﻿using DSharpPlus.Entities;
-using Microsoft.Xna.Framework.Graphics;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using DSharpPlus;
+using DSharpPlus.Entities;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Newtonsoft.Json;
 using Terraria;
 
 namespace DTT
@@ -36,13 +39,47 @@ namespace DTT
 			using (MemoryStream buffer = new MemoryStream(File.ReadAllBytes(path))) texture = Texture2D.FromStream(Main.instance.GraphicsDevice, buffer);
 			return texture;
 		}
-		
-		/// <summary>
-		/// Relays a message to the bot to update its current guild and channel
-		/// </summary>
-		public static void UpdateCurrent()
+
+		public static bool CanJoin(this DiscordChannel channel) => (channel.PermissionsFor(DTT.Instance.currentGuild.CurrentMember) & Permissions.ReadMessageHistory) != 0 && (channel.PermissionsFor(DTT.Instance.currentGuild.CurrentMember) & Permissions.AccessChannels) != 0;
+
+		public static void Save(this Config config)
 		{
-			DTT.Instance.server.PushMessage(new Tuple<string, object>("UpdateCurrent", new Tuple<ulong, ulong>(DTT.Instance.currentGuild.Id, DTT.Instance.currentChannel.Id)));
+			using (StreamWriter writer = File.CreateText(DTT.ConfigPath)) writer.WriteLine(JsonConvert.SerializeObject(config));
+		}
+
+		public static Config Load(this string path) => File.Exists(path) ? JsonConvert.DeserializeObject<Config>(File.ReadAllText(path)) : new Config();
+
+		public static void CleanDir(this string path)
+		{
+			if (Directory.Exists(path))
+			{
+				DirectoryInfo di = new DirectoryInfo(path);
+				foreach (FileInfo file in di.GetFiles()) file.Delete();
+			}
+		}
+
+		private static readonly Color colorInvisibleOffline= new Color(116, 127, 141);
+		private static readonly Color colorActive = new Color(67, 181, 129);
+		private static readonly Color colorIdle = new Color(250, 166, 26);
+		private static readonly Color colorDoNotDisturb = new Color(240, 71, 71);
+
+		public static Color PresenceColor(this DiscordPresence presence)
+		{
+			if (presence != null)
+			{
+				switch (presence.Status)
+				{
+					case UserStatus.Online:
+						return colorActive;
+					case UserStatus.Idle:
+						return colorIdle;
+					case UserStatus.DoNotDisturb:
+						return colorDoNotDisturb;
+					default:
+						return colorInvisibleOffline;
+				}
+			}
+			return colorInvisibleOffline;
 		}
 	}
 }
