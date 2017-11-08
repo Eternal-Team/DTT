@@ -59,9 +59,22 @@ namespace DTT
 			currentClient.MessageCreated += Create;
 			currentClient.MessageDeleted += Delete;
 			currentClient.MessageUpdated += Update;
+			//currentClient.PresenceUpdated += PresenceUpdate;
 
 			Task.Run(currentClient.ConnectAsync);
 		}
+
+		//private Task PresenceUpdate(PresenceUpdateEventArgs e)
+		//{
+		//	if (e.Member != null && e.Member.Id == currentClient.CurrentUser.Id)
+		//	{
+		//		Main.NewText(e.Guild.Name);
+		//		Main.NewText(e.Member.Username);
+		//	}
+		//	//Task.Run(() => currentClient.UpdateStatusAsync(user_status: e.Member.Presence.Status));
+
+		//	return Task.Delay(0);
+		//}
 
 		private Task Create(MessageCreateEventArgs e)
 		{
@@ -128,8 +141,8 @@ namespace DTT
 		public override void Load()
 		{
 			ErrorLogger.ClearLog();
-			Guilds.CleanDir();
-			Users.CleanDir();
+			//Guilds.CleanDir();
+			//Users.CleanDir();
 
 			Instance = this;
 

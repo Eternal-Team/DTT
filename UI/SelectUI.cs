@@ -56,7 +56,7 @@ namespace DTT.UI
 			avatarUser.Height.Pixels = 40;
 			avatarUser.Top.Set(-40, 1);
 			Append(avatarUser);
-			
+
 			panelSelect.Width.Pixels = 250;
 			panelSelect.Height.Pixels = 350;
 			panelSelect.Left.Pixels = 120;
@@ -113,9 +113,20 @@ namespace DTT.UI
 							UIChannel uiChild = new UIChannel(child);
 							uiChild.Width.Set(-8, 1);
 							uiChild.Height.Pixels = 40;
+							uiChild.color = DTT.Instance.currentChannel.Id == child.Id ? Color.Lime : Color.White;
 							uiChild.OnClick += (a, b) =>
 							{
 								DTT.Instance.currentChannel = child;
+
+								gridSelect.items.ForEach(x =>
+								{
+									if (x is UIChannel) ((UIChannel)x).color = Color.White;
+									else
+									{
+										(x as UICategory)?.items.ForEach(y => ((UIChannel)y).color = Color.White);
+									}
+								});
+								uiChild.color = Color.Lime;
 
 								DTT.log.Clear();
 								Task<IReadOnlyList<DiscordMessage>> task = child.GetMessagesAsync(50);
@@ -132,9 +143,20 @@ namespace DTT.UI
 					UIChannel uiChild = new UIChannel(channel);
 					uiChild.Width.Precent = 1;
 					uiChild.Height.Pixels = 40;
+					uiChild.color = DTT.Instance.currentChannel.Id == channel.Id ? Color.Lime : Color.White;
 					uiChild.OnClick += (a, b) =>
 					{
 						DTT.Instance.currentChannel = uiChild.channel;
+
+						gridSelect.items.ForEach(x =>
+						{
+							if (x is UIChannel) ((UIChannel)x).color = Color.White;
+							else
+							{
+								(x as UICategory)?.items.ForEach(y => ((UIChannel)y).color = Color.White);
+							}
+						});
+						uiChild.color = Color.Lime;
 
 						DTT.log.Clear();
 						Task<IReadOnlyList<DiscordMessage>> task = channel.GetMessagesAsync(50);
@@ -155,9 +177,13 @@ namespace DTT.UI
 				UIDMChannel dmChannel = new UIDMChannel(channel);
 				dmChannel.Width.Precent = 1;
 				dmChannel.Height.Pixels = 40;
+				dmChannel.color = DTT.Instance.currentChannel.Id == channel.Id ? Color.Lime : Color.White;
 				dmChannel.OnClick += (a, b) =>
 				{
 					DTT.Instance.currentChannel = dmChannel.channel;
+
+					gridSelect.items.ForEach(x => ((UIDMChannel)x).color = Color.White);
+					dmChannel.color = Color.Lime;
 
 					DTT.log.Clear();
 					Task<IReadOnlyList<DiscordMessage>> task = channel.GetMessagesAsync(50);

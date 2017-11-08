@@ -30,7 +30,15 @@ namespace DTT
 					};
 				}
 			}
-			else if (cache.ContainsKey(url)) action?.Invoke(cache[url]);
+			else
+			{
+				if (!cache.ContainsKey(url) && !path.IsFileLocked())
+				{
+					cache[url] = path.ToTexture();
+					action?.Invoke(cache[url]);
+				}
+				else if (cache.ContainsKey(url)) action?.Invoke(cache[url]);
+			}
 		}
 
 		public static Texture2D ToTexture(this string path)
@@ -58,7 +66,7 @@ namespace DTT
 			}
 		}
 
-		private static readonly Color colorInvisibleOffline= new Color(116, 127, 141);
+		private static readonly Color colorInvisibleOffline = new Color(116, 127, 141);
 		private static readonly Color colorActive = new Color(67, 181, 129);
 		private static readonly Color colorIdle = new Color(250, 166, 26);
 		private static readonly Color colorDoNotDisturb = new Color(240, 71, 71);
@@ -80,6 +88,27 @@ namespace DTT
 				}
 			}
 			return colorInvisibleOffline;
+		}
+
+		public static bool IsFileLocked(this string path)
+		{
+			FileInfo file = new FileInfo(path);
+			FileStream stream = null;
+
+			try
+			{
+				stream = file.Open(FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+			}
+			catch (IOException)
+			{
+				return true;
+			}
+			finally
+			{
+				stream?.Close();
+			}
+
+			return false;
 		}
 	}
 }
