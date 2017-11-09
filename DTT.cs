@@ -1,13 +1,16 @@
-﻿using DSharpPlus;
+﻿using BaseLib.Utility;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DTT.UI;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using DTT.UI.Elements;
 using Terraria;
 using Terraria.ModLoader;
 using Terraria.UI;
@@ -48,33 +51,31 @@ namespace DTT
 	{
 		public void Start()
 		{
-			if (string.IsNullOrWhiteSpace(config.token)) throw new Exception($"Token wasn't set!\nSet it in \"{ConfigPath}\" and reload the mod.");
-
-			currentClient = new DiscordClient(new DiscordConfiguration
+			try
 			{
-				Token = config.token,
-				TokenType = TokenType.User
-			});
-			currentClient.Ready += Ready;
-			currentClient.MessageCreated += Create;
-			currentClient.MessageDeleted += Delete;
-			currentClient.MessageUpdated += Update;
-			//currentClient.PresenceUpdated += PresenceUpdate;
+				if (string.IsNullOrWhiteSpace(config.token)) throw new Exception($"Token wasn't set!\nSet it in \"{ConfigPath}\" and reload the mod.");
 
-			Task.Run(currentClient.ConnectAsync);
+				currentClient = new DiscordClient(new DiscordConfiguration
+				{
+					Token = config.token,
+					TokenType = TokenType.User
+				});
+
+				currentClient.Ready += Ready;
+				currentClient.MessageCreated += Create;
+				currentClient.MessageDeleted += Delete;
+				currentClient.MessageUpdated += Update;
+
+				BackgroundWorker bg = new BackgroundWorker();
+				bg.DoWork += async delegate { await currentClient.ConnectAsync(); };
+				bg.RunWorkerAsync();
+			}
+			catch (Exception ex)
+			{
+				typeof(ModLoader).InvokeMethod<object>("SetModActive", new object[] { File, false });
+				throw new Exception(ex.ToString());
+			}
 		}
-
-		//private Task PresenceUpdate(PresenceUpdateEventArgs e)
-		//{
-		//	if (e.Member != null && e.Member.Id == currentClient.CurrentUser.Id)
-		//	{
-		//		Main.NewText(e.Guild.Name);
-		//		Main.NewText(e.Member.Username);
-		//	}
-		//	//Task.Run(() => currentClient.UpdateStatusAsync(user_status: e.Member.Presence.Status));
-
-		//	return Task.Delay(0);
-		//}
 
 		private Task Create(MessageCreateEventArgs e)
 		{
@@ -82,6 +83,16 @@ namespace DTT
 			{
 				log.Add(e.Message);
 				if (log.Count > 50) log.RemoveAt(0);
+
+				UIMessage message = new UIMessage(e.Message);
+				message.Width.Set(0f, 1f);
+				message.Height.Set(100f, 0f);
+				string path = $"{Users}{e.Author.Id}.png";
+				Utility.DownloadImage(path, e.Author.AvatarUrl, (a) =>
+				 {
+					 message.avatar = a;
+				 });
+				//SelectUI.gridMessages.Add(message);
 			}
 
 			return Task.Delay(0);
@@ -110,6 +121,8 @@ namespace DTT
 
 		private Task Ready(ReadyEventArgs e)
 		{
+			ErrorLogger.Log($"User [{currentClient.CurrentUser.Username}] is ready");
+
 			currentGuild = config.defaultGuildID.HasValue && currentClient.Guilds.Any(x => x.Value.Id == config.defaultGuildID) ? currentClient.Guilds.First(x => x.Value.Id == config.defaultGuildID).Value : currentClient.Guilds.ElementAt(0).Value;
 			currentChannel = config.defaultChannelID.HasValue && currentGuild.Channels.Any(x => x.Id == config.defaultChannelID.Value) ? currentGuild.Channels.First(x => x.Id == config.defaultChannelID) : currentGuild.GetDefaultChannel();
 
@@ -141,8 +154,6 @@ namespace DTT
 		public override void Load()
 		{
 			ErrorLogger.ClearLog();
-			//Guilds.CleanDir();
-			//Users.CleanDir();
 
 			Instance = this;
 

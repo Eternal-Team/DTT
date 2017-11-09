@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BaseLib.Utility;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
 
@@ -26,7 +27,7 @@ namespace DTT.UI
 		public UIGrid gridSelect = new UIGrid();
 		public UIScrollbar barSelect = new UIScrollbar();
 
-		public UIText test = new UIText("");
+		public UIGrid gridMessages=new UIGrid();
 
 		public override void OnInitialize()
 		{
@@ -70,9 +71,11 @@ namespace DTT.UI
 			gridSelect.ListPadding = 4f;
 			panelSelect.Append(gridSelect);
 
-			test.HAlign = 1;
-			test.VAlign = 1;
-			Append(test);
+			gridMessages.Width.Set(0, 0.5f);
+			gridMessages.Height.Set(0, 0.33f);
+			gridMessages.Center();
+			gridMessages.ListPadding = 4f;
+			Append(gridMessages);
 
 			barSelect.SetView(100f, 1000f);
 			gridSelect.SetScrollbar(barSelect);
@@ -105,37 +108,6 @@ namespace DTT.UI
 					UICategory uiCategory = new UICategory(channel);
 					uiCategory.Width.Precent = 1;
 					uiCategory.Height.Pixels = 40;
-
-					foreach (DiscordChannel child in channel.Children)
-					{
-						if (child.CanJoin())
-						{
-							UIChannel uiChild = new UIChannel(child);
-							uiChild.Width.Set(-8, 1);
-							uiChild.Height.Pixels = 40;
-							uiChild.color = DTT.Instance.currentChannel.Id == child.Id ? Color.Lime : Color.White;
-							uiChild.OnClick += (a, b) =>
-							{
-								DTT.Instance.currentChannel = child;
-
-								gridSelect.items.ForEach(x =>
-								{
-									if (x is UIChannel) ((UIChannel)x).color = Color.White;
-									else
-									{
-										(x as UICategory)?.items.ForEach(y => ((UIChannel)y).color = Color.White);
-									}
-								});
-								uiChild.color = Color.Lime;
-
-								DTT.log.Clear();
-								Task<IReadOnlyList<DiscordMessage>> task = child.GetMessagesAsync(50);
-								task.ContinueWith(t => DTT.log.AddRange(t.Result.ToList()));
-							};
-							uiCategory.items.Add(uiChild);
-						}
-					}
-
 					gridSelect.Add(uiCategory);
 				}
 				else if (!channel.IsCategory && !channel.ParentId.HasValue && channel.CanJoin())
@@ -151,10 +123,7 @@ namespace DTT.UI
 						gridSelect.items.ForEach(x =>
 						{
 							if (x is UIChannel) ((UIChannel)x).color = Color.White;
-							else
-							{
-								(x as UICategory)?.items.ForEach(y => ((UIChannel)y).color = Color.White);
-							}
+							else (x as UICategory)?.items.ForEach(y => ((UIChannel)y).color = Color.White);
 						});
 						uiChild.color = Color.Lime;
 
@@ -218,12 +187,6 @@ namespace DTT.UI
 				Utility.DownloadImage(path, guild.IconUrl, texture => uiGuild.texture = texture);
 				gridSelect.Add(uiGuild);
 			}
-		}
-
-		public override void Update(GameTime gameTime)
-		{
-			test.SetText("Count: " + DTT.log.Count);
-			test.Recalculate();
 		}
 	}
 }

@@ -50,6 +50,7 @@
     <Reference Include="ReLogic, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="Terraria">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Terraria Modded\Terraria.exe</HintPath>
@@ -63,6 +64,7 @@
     <Compile Include="UI\Elements\UIChannel.cs" />
     <Compile Include="UI\Elements\UIDMChannel.cs" />
     <Compile Include="UI\Elements\UIGuild.cs" />
+    <Compile Include="UI\Elements\UIMessage.cs" />
     <Compile Include="UI\Elements\UIUser.cs" />
     <Compile Include="UI\SelectUI.cs" />
     <Compile Include="Utility.cs" />
@@ -70,18 +72,17 @@
   <ItemGroup>
     <Content Include="build.txt" />
     <Content Include="description.txt" />
+    <Content Include="Effects\ActivityShader.fx" />
+    <Content Include="Effects\CircleShader.fx" />
     <Content Include="Textures\Arrow.png" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="Effects\ActivityShader.xnb" />
     <None Include="packages.config" />
     <None Include="Effects\CircleShader.xnb" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\Apps\Discord\DTTBot\DTTBot\DTTBot.csproj">
-      <Project>{2d3e3e3d-c7c3-4e4a-950d-05687d788ef3}</Project>
-      <Name>DTTBot</Name>
-    </ProjectReference>
     <ProjectReference Include="..\BaseLib\BaseLib.csproj">
       <Project>{6812D262-8588-4999-A01D-A6DDC71ED4C0}</Project>
       <Name>BaseLib</Name>
