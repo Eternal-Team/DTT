@@ -3,6 +3,7 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DTT.UI;
+using DTT.UI.Elements;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,6 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using DTT.UI.Elements;
 using Terraria;
 using Terraria.ModLoader;
 using Terraria.UI;
@@ -58,14 +58,15 @@ namespace DTT
 				currentClient = new DiscordClient(new DiscordConfiguration
 				{
 					Token = config.token,
-					TokenType = TokenType.User
+					TokenType = TokenType.User,
+					AutoReconnect = true
 				});
 
 				currentClient.Ready += Ready;
 				currentClient.MessageCreated += Create;
 				currentClient.MessageDeleted += Delete;
 				currentClient.MessageUpdated += Update;
-
+				currentClient.ClientErrored += Error;
 				BackgroundWorker bg = new BackgroundWorker();
 				bg.DoWork += async delegate { await currentClient.ConnectAsync(); };
 				bg.RunWorkerAsync();
@@ -77,22 +78,29 @@ namespace DTT
 			}
 		}
 
+		private Task Error(ClientErrorEventArgs e)
+		{
+			ErrorLogger.Log(e.Exception);
+
+			BackgroundWorker bg = new BackgroundWorker();
+			bg.DoWork += async delegate { await currentClient.ReconnectAsync(); };
+			bg.RunWorkerAsync();
+
+			return Task.Delay(0);
+		}
+
 		private Task Create(MessageCreateEventArgs e)
 		{
 			if (e.Guild == currentGuild && e.Channel == currentChannel)
 			{
-				log.Add(e.Message);
-				if (log.Count > 50) log.RemoveAt(0);
-
 				UIMessage message = new UIMessage(e.Message);
 				message.Width.Set(0f, 1f);
-				message.Height.Set(100f, 0f);
+				message.Height.Set(40, 0);
 				string path = $"{Users}{e.Author.Id}.png";
-				Utility.DownloadImage(path, e.Author.AvatarUrl, (a) =>
-				 {
-					 message.avatar = a;
-				 });
-				//SelectUI.gridMessages.Add(message);
+				Utility.DownloadImage(path, e.Author.AvatarUrl, texture => message.avatar = texture);
+				message.RecalculateMessage();
+				SelectUI.gridMessages.Add(message);
+				SelectUI.gridMessages.RecalculateChildren();
 			}
 
 			return Task.Delay(0);

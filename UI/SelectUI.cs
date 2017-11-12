@@ -7,7 +7,6 @@ using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using BaseLib.Utility;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
 
@@ -27,7 +26,9 @@ namespace DTT.UI
 		public UIGrid gridSelect = new UIGrid();
 		public UIScrollbar barSelect = new UIScrollbar();
 
-		public UIGrid gridMessages=new UIGrid();
+		public UIPanel panelMessages = new UIPanel();
+		public UIChat gridMessages = new UIChat();
+		public UIScrollbar barMessages = new UIScrollbar();
 
 		public override void OnInitialize()
 		{
@@ -56,7 +57,7 @@ namespace DTT.UI
 			avatarUser.Width.Pixels = 120;
 			avatarUser.Height.Pixels = 40;
 			avatarUser.Top.Set(-40, 1);
-			Append(avatarUser);
+			screen.Append(avatarUser);
 
 			panelSelect.Width.Pixels = 250;
 			panelSelect.Height.Pixels = 350;
@@ -71,11 +72,26 @@ namespace DTT.UI
 			gridSelect.ListPadding = 4f;
 			panelSelect.Append(gridSelect);
 
-			gridMessages.Width.Set(0, 0.5f);
-			gridMessages.Height.Set(0, 0.33f);
-			gridMessages.Center();
+			panelMessages.Width.Set(0, 0.5f);
+			panelMessages.Height.Set(0, 0.4f);
+			panelMessages.VAlign = 0.5f;
+			panelMessages.SetPadding(0);
+			screen.Append(panelMessages);
+
+			gridMessages.Width.Set(-44, 1f);
+			gridMessages.Height.Set(-16, 1f);
+			gridMessages.Top.Pixels = 8;
+			gridMessages.Left.Set(36, 0);
 			gridMessages.ListPadding = 4f;
-			Append(gridMessages);
+			panelMessages.Append(gridMessages);
+
+			CalculatedStyle dimensions = panelMessages.GetDimensions();
+			barMessages.Height.Precent = (dimensions.Height - 16) / dimensions.Height;
+			barMessages.Top.Precent = 8f / dimensions.Height;
+			barMessages.Left.Set(8, 0);
+			barMessages.SetView(100f, 1000f);
+			gridMessages.SetScrollbar(barMessages);
+			panelMessages.Append(barMessages);
 
 			barSelect.SetView(100f, 1000f);
 			gridSelect.SetScrollbar(barSelect);
