@@ -147,13 +147,14 @@ namespace DTT
 					string text = word;
 					ulong id = 0;
 					Color color = Color.White;
-					//if (findRegexes.Any(reg => reg.IsMatch(text)))
-					//{
-					//	Regex use = findRegexes.First(reg => reg.IsMatch(text));
-					//	id = ulong.Parse(findIDRegexes[findRegexes.IndexOf(use)].Match(text).Value);
-					//	text = use.Replace(text, $"#{DTT.Instance.currentGuild.Channels.First(z => z.Id == id).Name}");
-					//	color = Color.LightBlue;
-					//}
+
+					if (findRegexes[0].IsMatch(text))
+					{
+						Regex use = findRegexes[0];
+						id = ulong.Parse(findIDRegexes[0].Match(text).Value);
+						text = use.Replace(text, $"#{DTT.Instance.currentGuild.Channels.First(z => z.Id == id).Name}");
+						color = Color.LightBlue;
+					}
 
 					if (x + Main.fontMouseText.MeasureString(text).X > maxLineLength)
 					{
@@ -169,7 +170,6 @@ namespace DTT
 						Y = y,
 						Text = text,
 						ID = id,
-						OnHover = a => { Main.NewText(a); },
 						Color = color
 					};
 

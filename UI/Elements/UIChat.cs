@@ -1,4 +1,5 @@
-﻿using BaseLib.Elements;
+﻿using System;
+using BaseLib.Elements;
 using BaseLib.Utility;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -33,7 +34,7 @@ namespace DTT.UI.Elements
 		}
 
 		public List<UIElement> items = new List<UIElement>();
-		protected UIScrollbar scrollbar;
+		protected UIScrollbarReversed scrollbar;
 		internal UIElement innerList = new UIInnerList();
 		private float innerListHeight;
 		public float ListPadding = 4f;
@@ -100,10 +101,24 @@ namespace DTT.UI.Elements
 			UpdateScrollbar();
 		}
 
+
+		private float target;
+		private void Lerp()
+		{
+			if (scrollbar != null)
+			{
+				if (Math.Abs(scrollbar.ViewPosition - target) > 16.0)
+				{
+					if (target < scrollbar.ViewPosition) scrollbar.ViewPosition -= 16;
+					else scrollbar.ViewPosition += 16;
+				}
+			}
+		}
+
 		public override void ScrollWheel(UIScrollWheelEvent evt)
 		{
 			base.ScrollWheel(evt);
-			if (scrollbar != null) scrollbar.ViewPosition += evt.ScrollWheelValue / 2f;
+			if (scrollbar != null) target = scrollbar.ViewPosition + evt.ScrollWheelValue;
 		}
 
 		public override void RecalculateChildren()
@@ -126,7 +141,7 @@ namespace DTT.UI.Elements
 			scrollbar?.SetView(GetInnerDimensions().Height, innerListHeight);
 		}
 
-		public void SetScrollbar(UIScrollbar scrollbar)
+		public void SetScrollbar(UIScrollbarReversed scrollbar)
 		{
 			this.scrollbar = scrollbar;
 			UpdateScrollbar();
@@ -161,6 +176,7 @@ namespace DTT.UI.Elements
 			Rectangle prevRect = spriteBatch.GraphicsDevice.ScissorRectangle;
 			spriteBatch.GraphicsDevice.ScissorRectangle = GetInnerDimensions().ToRectangle();
 
+			Lerp();
 			if (scrollbar != null) innerList.Top.Set(scrollbar.GetValue(), 0f);
 			RecalculateChildren();
 			Recalculate();

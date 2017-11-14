@@ -28,7 +28,7 @@ namespace DTT.UI
 
 		public UIPanel panelMessages = new UIPanel();
 		public UIChat gridMessages = new UIChat();
-		public UIScrollbar barMessages = new UIScrollbar();
+		public UIScrollbarReversed barMessages = new UIScrollbarReversed();
 
 		public override void OnInitialize()
 		{
@@ -72,10 +72,11 @@ namespace DTT.UI
 			gridSelect.ListPadding = 4f;
 			panelSelect.Append(gridSelect);
 
-			panelMessages.Width.Set(0, 0.5f);
+			panelMessages.Width.Set(0, 0.7f);
 			panelMessages.Height.Set(0, 0.4f);
 			panelMessages.VAlign = 0.5f;
 			panelMessages.SetPadding(0);
+			panelMessages.BackgroundColor = panelColor * 0.6f;
 			screen.Append(panelMessages);
 
 			gridMessages.Width.Set(-44, 1f);

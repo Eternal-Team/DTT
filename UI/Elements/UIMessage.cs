@@ -4,9 +4,7 @@ using DSharpPlus.Entities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Linq;
-using System.Threading.Tasks;
 using Terraria;
-using Terraria.ModLoader;
 using Terraria.UI;
 
 namespace DTT.UI.Elements
@@ -32,21 +30,11 @@ namespace DTT.UI.Elements
 		public void RecalculateMessage()
 		{
 			Recalculate();
-			lines = message.Content.SplitToLines(GetDimensions().Width - 48).ToArray();
-			foreach (Snippet snippet in lines) ErrorLogger.Log(snippet.ToString());
-			float height = lines.Last().Y + lines.Last().Height + 24;
-			if (height < 40) height = avatar.Height;
-			Height.Set(height, 0);
-		}
+			lines = message.Content.SplitToLines(896).ToArray();
 
-		public override void MouseOver(UIMouseEvent evt)
-		{
-			Vector2 mousePosRel = evt.MousePosition - GetDimensions().Position();
-			if (lines.Any(x => x.ToRectangle().Contains(mousePosRel)))
-			{
-				Snippet hover = lines.FirstOrDefault(x => x.ToRectangle().Contains(mousePosRel));
-				hover.OnHover.Invoke(hover.ID);
-			}
+			float height = lines.Last().Y + lines.Last().Height + 24;
+			if (height < 40) height = 40;
+			Height.Set(height, 0);
 		}
 
 		private string nameOverride;
@@ -73,7 +61,11 @@ namespace DTT.UI.Elements
 
 			for (int i = 0; i < lines.Length; i++)
 			{
-				Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, lines[i].Text, dimensions.X + 48 + lines[i].X, dimensions.Y + 24 + lines[i].Y, Color.White, Color.Black, Vector2.Zero);
+				Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, lines[i].Text, dimensions.X + 48 + lines[i].X, dimensions.Y + 24 + lines[i].Y, lines[i].Color, Color.Black, Vector2.Zero);
+				spriteBatch.Draw(Main.magicPixel, new Rectangle((int)(dimensions.X + 48 + lines[i].X), (int)(dimensions.Y + 24 + lines[i].Y), (int)lines[i].Width, (int)lines[i].Height), Color.Red * 0.15f);
+
+				Rectangle rect = new Rectangle((int)(dimensions.X + 48 + lines[i].X), (int)(dimensions.Y + 24 + lines[i].Y), (int)lines[i].Width, (int)lines[i].Height);
+				if (rect.Contains(Main.MouseScreen)) BaseLib.Utility.Utility.DrawMouseText("Go to " + lines[i].Text);
 			}
 
 			spriteBatch.SetupForShader(DTT.circleShader);

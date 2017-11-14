@@ -66,6 +66,7 @@
     <Compile Include="UI\Elements\UIDMChannel.cs" />
     <Compile Include="UI\Elements\UIGuild.cs" />
     <Compile Include="UI\Elements\UIMessage.cs" />
+    <Compile Include="UI\Elements\UIScrollbarReversed.cs" />
     <Compile Include="UI\Elements\UIUser.cs" />
     <Compile Include="UI\SelectUI.cs" />
     <Compile Include="Utility.cs" />
