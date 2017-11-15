@@ -61,11 +61,15 @@ namespace DTT.UI.Elements
 
 			for (int i = 0; i < lines.Length; i++)
 			{
-				Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, lines[i].Text, dimensions.X + 48 + lines[i].X, dimensions.Y + 24 + lines[i].Y, lines[i].Color, Color.Black, Vector2.Zero);
-				spriteBatch.Draw(Main.magicPixel, new Rectangle((int)(dimensions.X + 48 + lines[i].X), (int)(dimensions.Y + 24 + lines[i].Y), (int)lines[i].Width, (int)lines[i].Height), Color.Red * 0.15f);
+				if (lines[i].OnDraw != null) lines[i].OnDraw.Invoke(spriteBatch, new CalculatedStyle(dimensions.X + lines[i].X + 48, dimensions.Y + lines[i].Y + 24, dimensions.Width, dimensions.Height));
+				else
+				{
+					Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, lines[i].Text, dimensions.X + 48 + lines[i].X, dimensions.Y + 24 + lines[i].Y, lines[i].Color, Color.Black, Vector2.Zero);
+					//spriteBatch.Draw(Main.magicPixel, new Rectangle((int)(dimensions.X + 48 + lines[i].X), (int)(dimensions.Y + 24 + lines[i].Y), (int)lines[i].Width, (int)lines[i].Height), Color.Red * 0.15f);
+				}
 
-				Rectangle rect = new Rectangle((int)(dimensions.X + 48 + lines[i].X), (int)(dimensions.Y + 24 + lines[i].Y), (int)lines[i].Width, (int)lines[i].Height);
-				if (rect.Contains(Main.MouseScreen)) BaseLib.Utility.Utility.DrawMouseText("Go to " + lines[i].Text);
+				//Rectangle rect = new Rectangle((int)(dimensions.X + 48 + lines[i].X), (int)(dimensions.Y + 24 + lines[i].Y), (int)lines[i].Width, (int)lines[i].Height);
+				//if (rect.Contains(Main.MouseScreen)) BaseLib.Utility.Utility.DrawMouseText("Go to " + lines[i].Text);
 			}
 
 			spriteBatch.SetupForShader(DTT.circleShader);

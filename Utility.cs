@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using Terraria;
+using Terraria.UI;
 
 namespace DTT
 {
@@ -19,18 +20,6 @@ namespace DTT
 		private static readonly Color colorActive = new Color(67, 181, 129);
 		private static readonly Color colorIdle = new Color(250, 166, 26);
 		private static readonly Color colorDoNotDisturb = new Color(240, 71, 71);
-
-		//public static readonly Regex channelFindID = new Regex(@"(?<=<#)\d+(?=>)");
-		//public static readonly Regex channelFind = new Regex(@"<#\d+>");
-
-		//public static readonly Regex roleFindID = new Regex(@"(?<=<@&)\d+(?=>)");
-		//public static readonly Regex roleFind = new Regex(@"<@&\d+>");
-
-		//public static readonly Regex userFindID = new Regex(@"(?<=<@)\d+(?=>)");
-		//public static readonly Regex userFind = new Regex(@"<@\d+>");
-
-		//public static readonly Regex emoteFindID = new Regex(@"(?<=:)\d+(?=>)");
-		//public static readonly Regex emoteFind = new Regex(@"<:\w+:\d+>");
 
 		public static readonly List<Regex> findRegexes = new List<Regex> { new Regex(@"<#\d+>"), new Regex(@"<@&\d+>"), new Regex(@"<@\d+>"), new Regex(@"<:\w+:\d+>") };
 		public static readonly List<Regex> findIDRegexes = new List<Regex> { new Regex(@"(?<=<#)\d+(?=>)"), new Regex(@"(?<=<@&)\d+(?=>)"), new Regex(@"(?<=<@)\d+(?=>)"), new Regex(@"(?<=:)\d+(?=>)") };
@@ -142,41 +131,108 @@ namespace DTT
 
 				for (int i = 0; i < words.Length; i++)
 				{
-					string word = words[i];
+					string text = words[i];
+					ulong id;
 
-					string text = word;
-					ulong id = 0;
-					Color color = Color.White;
+					Main.NewText(text);
 
-					if (findRegexes[0].IsMatch(text))
+					int index = findRegexes.FindIndex(z => z.IsMatch(text));
+
+					switch (index)
 					{
-						Regex use = findRegexes[0];
-						id = ulong.Parse(findIDRegexes[0].Match(text).Value);
-						text = use.Replace(text, $"#{DTT.Instance.currentGuild.Channels.First(z => z.Id == id).Name}");
-						color = Color.LightBlue;
+						case 0:     // Channels
+							id = ulong.Parse(findIDRegexes[index].Match(text).Value);
+							DiscordChannel channel = DTT.Instance.currentGuild.Channels.First(z => z.Id == id);
+							text = $"#{channel.Name}";
+							yield return new Snippet
+							{
+								Width = Main.fontMouseText.MeasureString(text).X,
+								Height = Main.fontMouseText.MeasureString(text).Y,
+								X = x,
+								Y = y,
+								Text = text,
+								Color = new Color(105, 137, 200)
+							};
+							break;
+						case 1:     // Roles
+							id = ulong.Parse(findIDRegexes[index].Match(text).Value);
+							DiscordRole role = DTT.Instance.currentGuild.Roles.First(z => z.Id == id);
+							text = $"@{role.Name}";
+							yield return new Snippet
+							{
+								Width = Main.fontMouseText.MeasureString(text).X,
+								Height = Main.fontMouseText.MeasureString(text).Y,
+								X = x,
+								Y = y,
+								Text = text,
+								Color = role.Color.Value.FromInt()
+							};
+							break;
+						case 2:     // Mentions
+							id = ulong.Parse(findIDRegexes[index].Match(text).Value);
+							DiscordMember member = DTT.Instance.currentGuild.Members.First(z => z.Id == id);
+							text = $"@{member.DisplayName}";
+							yield return new Snippet
+							{
+								Width = Main.fontMouseText.MeasureString(text).X,
+								Height = Main.fontMouseText.MeasureString(text).Y,
+								X = x,
+								Y = y,
+								Text = text,
+								Color = member.Color.Value.FromInt()
+							};
+							break;
+						case 3:     // Emotes
+							id = ulong.Parse(findIDRegexes[index].Match(text).Value);
+							DiscordEmoji emoji = DTT.Instance.currentGuild.Emojis.First(z => z.Id == id);
+							text = emoji.GetDiscordName();
+
+							string url = "https://" + $"cdn.discordapp.com/emojis/{id}.png";
+							Texture2D emojiTexture = null;
+							float ratio = 1f;
+							DownloadImage($"{DTT.Emojis}{id}.png", url, texture =>
+							{
+								emojiTexture = texture;
+								ratio = emojiTexture.Width / (float)emojiTexture.Height;
+							});
+
+							yield return new Snippet
+							{
+								Width = 20 * ratio,
+								Height = 20,
+								X = x,
+								Y = y,
+								OnDraw = (spriteBatch, dimensions) =>
+								{
+									if (cache.ContainsKey(url) && emojiTexture != null) spriteBatch.Draw(emojiTexture, new Rectangle((int)dimensions.X, (int)dimensions.Y, (int)(20 * ratio), 20), Color.White);
+								}
+							};
+							x += 20 * ratio + 8;
+							Main.NewText(ratio);
+							break;
+						default:    // Other
+							yield return new Snippet
+							{
+								Width = Main.fontMouseText.MeasureString(text).X,
+								Height = Main.fontMouseText.MeasureString(text).Y,
+								X = x,
+								Y = y,
+								Text = text,
+								Color = Color.White
+							};
+							break;
 					}
 
 					if (x + Main.fontMouseText.MeasureString(text).X > maxLineLength)
 					{
 						x = 0;
-						y += Main.fontMouseText.MeasureString(text).Y + 4;
+						y += Main.fontMouseText.MeasureString(text).Y;
 					}
 
-					yield return new Snippet
-					{
-						Height = Main.fontMouseText.MeasureString(text).Y,
-						Width = Main.fontMouseText.MeasureString(text).X,
-						X = x,
-						Y = y,
-						Text = text,
-						ID = id,
-						Color = color
-					};
-
-					x += Main.fontMouseText.MeasureString(word).X + 8;
+					if (index < 3) x += Main.fontMouseText.MeasureString(text).X + 8;
 				}
 
-				y += 24;
+				y += 20;
 				x = 0;
 			}
 		}
@@ -195,15 +251,10 @@ namespace DTT
 		public Color Color;
 
 		public Action<ulong> OnClick;
-		public Action<ulong> OnHover;
+		public Action<SpriteBatch, CalculatedStyle> OnDraw;
 
 		public override string ToString() => $"X: [{X}], Y: [{Y}], Width: [{Width}], Height: [{Height}], ID: [{ID}], Text: [{Text}]";
 
 		public Rectangle ToRectangle() => new Rectangle((int)X, (int)Y, (int)Width, (int)Height);
-	}
-
-	public class Emote : Snippet
-	{
-
 	}
 }

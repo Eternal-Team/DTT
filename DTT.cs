@@ -24,6 +24,7 @@ namespace DTT
 		public static string SavePath => Main.SavePath + "\\DTT";
 		public static string Guilds => SavePath + "\\Cache\\Guilds\\";
 		public static string Users => SavePath + "\\Cache\\Users\\";
+		public static string Emojis => SavePath + "\\Cache\\Emojis\\";
 		public static string ConfigPath => SavePath + "\\Config.json";
 
 		public Config config;
@@ -173,11 +174,11 @@ namespace DTT
 			Directory.CreateDirectory(SavePath);
 			Directory.CreateDirectory(Guilds);
 			Directory.CreateDirectory(Users);
+			Directory.CreateDirectory(Emojis);
 
 			config = ConfigPath.Load();
 
 			Main.instance.Exiting += OnExit;
-			Main.OnTick += OnTick;
 
 			Start();
 
@@ -193,12 +194,12 @@ namespace DTT
 		public override void Unload()
 		{
 			Main.instance.Exiting -= OnExit;
-			Main.OnTick -= OnTick;
 
 			Utility.cache.Clear();
 
 			Guilds.CleanDir();
 			Users.CleanDir();
+			Emojis.CleanDir();
 
 			Instance = null;
 
@@ -222,15 +223,11 @@ namespace DTT
 			}
 		}
 
-		public void OnTick()
-		{
-
-		}
-
 		private void OnExit(object sender, EventArgs e)
 		{
 			Guilds.CleanDir();
 			Users.CleanDir();
+			Emojis.CleanDir();
 
 			config.Save();
 		}
