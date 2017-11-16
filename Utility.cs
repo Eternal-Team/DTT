@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -21,7 +22,7 @@ namespace DTT
 		private static readonly Color colorIdle = new Color(250, 166, 26);
 		private static readonly Color colorDoNotDisturb = new Color(240, 71, 71);
 
-		public static readonly List<Regex> findRegexes = new List<Regex> { new Regex(@"<#\d+>"), new Regex(@"<@&\d+>"), new Regex(@"<@\d+>"), new Regex(@"<:\w+:\d+>") };
+		public static readonly List<Regex> findRegexes = new List<Regex> { new Regex(@"<#\d+>"), new Regex(@"<@&\d+>"), new Regex(@"<@\d+>"), new Regex(@"<:\w+:\d+>"), new Regex(@"\b(?:https?://|www\.)\S+\b", RegexOptions.Compiled | RegexOptions.IgnoreCase) };
 		public static readonly List<Regex> findIDRegexes = new List<Regex> { new Regex(@"(?<=<#)\d+(?=>)"), new Regex(@"(?<=<@&)\d+(?=>)"), new Regex(@"(?<=<@)\d+(?=>)"), new Regex(@"(?<=:)\d+(?=>)") };
 
 		public static Dictionary<string, Texture2D> cache = new Dictionary<string, Texture2D>();
@@ -117,7 +118,7 @@ namespace DTT
 			return false;
 		}
 
-		public static IEnumerable<Snippet> SplitToLines(this string stringToSplit, float maxLineLength)
+		public static IEnumerable<Snippet> FormatMessage(this string stringToSplit, float maxLineLength)
 		{
 			float x = 0;
 			float y = 0;
@@ -134,8 +135,6 @@ namespace DTT
 					string text = words[i];
 					ulong id;
 
-					Main.NewText(text);
-
 					int index = findRegexes.FindIndex(z => z.IsMatch(text));
 
 					switch (index)
@@ -151,7 +150,8 @@ namespace DTT
 								X = x,
 								Y = y,
 								Text = text,
-								Color = new Color(105, 137, 200)
+								Color = new Color(105, 137, 200),
+								OnClick = () => { DTT.Instance.currentChannel = channel; }
 							};
 							break;
 						case 1:     // Roles
@@ -186,29 +186,41 @@ namespace DTT
 							id = ulong.Parse(findIDRegexes[index].Match(text).Value);
 							DiscordEmoji emoji = DTT.Instance.currentGuild.Emojis.First(z => z.Id == id);
 							text = emoji.GetDiscordName();
-
 							string url = "https://" + $"cdn.discordapp.com/emojis/{id}.png";
 							Texture2D emojiTexture = null;
-							float ratio = 1f;
-							DownloadImage($"{DTT.Emojis}{id}.png", url, texture =>
-							{
-								emojiTexture = texture;
-								ratio = emojiTexture.Width / (float)emojiTexture.Height;
-							});
-
+							DownloadImage($"{DTT.Emojis}{id}.png", url, texture => emojiTexture = texture);
 							yield return new Snippet
 							{
-								Width = 20 * ratio,
+								Width = 20,
 								Height = 20,
 								X = x,
 								Y = y,
 								OnDraw = (spriteBatch, dimensions) =>
 								{
-									if (cache.ContainsKey(url) && emojiTexture != null) spriteBatch.Draw(emojiTexture, new Rectangle((int)dimensions.X, (int)dimensions.Y, (int)(20 * ratio), 20), Color.White);
-								}
+									if (cache.ContainsKey(url) && emojiTexture != null)
+									{
+										float scale = Math.Min(20f / emojiTexture.Width, 20f / emojiTexture.Height);
+										spriteBatch.Draw(emojiTexture, dimensions.Position(), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+									}
+								},
+								OnHover = (spriteBatch, dimensions) => { BaseLib.Utility.Utility.DrawMouseText(text); }
 							};
-							x += 20 * ratio + 8;
-							Main.NewText(ratio);
+							x += 20;
+							break;
+						case 4:     // Links
+							string link = text;
+							text = "[Link]";
+							yield return new Snippet
+							{
+								Width = Main.fontMouseText.MeasureString(text).X,
+								Height = Main.fontMouseText.MeasureString(text).Y,
+								X = x,
+								Y = y,
+								Text = text,
+								Color = new Color(105, 137, 200),
+								OnHover = (spriteBatch, dimensions) => { BaseLib.Utility.Utility.DrawMouseText(link); },
+								OnClick = () => { Process.Start(link); }
+							};
 							break;
 						default:    // Other
 							yield return new Snippet
@@ -229,7 +241,7 @@ namespace DTT
 						y += Main.fontMouseText.MeasureString(text).Y;
 					}
 
-					if (index < 3) x += Main.fontMouseText.MeasureString(text).X + 8;
+					if (index < 3 || index == 4) x += Main.fontMouseText.MeasureString(text).X + 8;
 				}
 
 				y += 20;
@@ -250,7 +262,8 @@ namespace DTT
 		public ulong ID;
 		public Color Color;
 
-		public Action<ulong> OnClick;
+		public Action OnClick;
+		public Action<SpriteBatch, CalculatedStyle> OnHover;
 		public Action<SpriteBatch, CalculatedStyle> OnDraw;
 
 		public override string ToString() => $"X: [{X}], Y: [{Y}], Width: [{Width}], Height: [{Height}], ID: [{ID}], Text: [{Text}]";
