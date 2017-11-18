@@ -4,7 +4,6 @@ using DSharpPlus.Entities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Linq;
-using System.Threading.Tasks;
 using Terraria;
 using Terraria.UI;
 
@@ -38,11 +37,7 @@ namespace DTT.UI.Elements
 			if (height < 40) height = 40;
 			Height.Set(height, 0);
 
-			if (message.Author.Presence != null && message.Author.Presence.Guild != null && message.Author.Presence.Guild.Id == DTT.Instance.currentGuild.Id)
-			{
-				Task<DiscordMember> t = message.Author.Presence.Guild.GetMemberAsync(message.Author.Id);
-				t.ContinueWith(x => member = t.Result);
-			}
+			if (message.Author.Presence != null && message.Author.Presence.Guild != null && message.Author.Presence.Guild.Id == DTT.Instance.currentGuild.Id) member = message.Author.Presence.Guild.Members.First(x => x.Id == message.Author.Id);
 		}
 
 		public override void Click(UIMouseEvent evt)
@@ -65,7 +60,7 @@ namespace DTT.UI.Elements
 			Color color = Color.White;
 			if (message.Channel.Guild.Members.Any(x => x.Id == message.Author.Id)) color = message.Channel.Guild.Members.First(x => x.Id == message.Author.Id).Color.Value.FromInt();
 
-			Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, message.Author.Username, dimensions.X + 48, dimensions.Y, color, Color.Black, Vector2.Zero);
+			Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, member != null && member.Nickname != null ? member.Nickname : message.Author.Username, dimensions.X + 48, dimensions.Y, color, Color.Black, Vector2.Zero);
 			Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, $" - {message.CreationTimestamp.ToLocalTime().DateTime}", dimensions.X + 48 + message.Author.Username.Measure().X, dimensions.Y, Color.White, Color.Black, Vector2.Zero);
 
 			for (int i = 0; i < lines.Length; i++)
@@ -79,7 +74,7 @@ namespace DTT.UI.Elements
 					if (rect.Contains(Main.MouseScreen)) lines[i].OnHover.Invoke(spriteBatch, dimensions);
 				}
 			}
-
+			
 			spriteBatch.SetupForShader(DTT.circleShader);
 
 			spriteBatch.Draw(avatar, new Rectangle((int)dimensions.X, (int)dimensions.Y, 40, 40), Color.White);

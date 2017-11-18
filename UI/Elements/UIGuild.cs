@@ -27,16 +27,28 @@ namespace DTT.UI.Elements
 		{
 			CalculatedStyle dimensions = GetDimensions();
 
-			spriteBatch.EnableScissor();
+			RasterizerState state = new RasterizerState { ScissorTestEnable = true };
 
-			spriteBatch.DrawPanel(dimensions, BaseLib.Utility.Utility.backgroundTexture, BaseUI.panelColor);
-			spriteBatch.DrawPanel(dimensions, BaseLib.Utility.Utility.borderTexture, Color.Black);
-			Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, guild.Name, dimensions.X + dimensions.Height, dimensions.Y + dimensions.Height / 2 - 10, color, Color.Black, Vector2.Zero);
-			
+			spriteBatch.End();
+			spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, Main.DefaultSamplerState, null, state, null, Main.UIScaleMatrix);
+			Rectangle prevRect = spriteBatch.GraphicsDevice.ScissorRectangle;
+			spriteBatch.GraphicsDevice.ScissorRectangle = new Rectangle((int)DTT.Instance.SelectUI.gridGuilds.GetDimensions().X, (int)DTT.Instance.SelectUI.gridGuilds.GetDimensions().Y - 6, Main.screenWidth - (int)DTT.Instance.SelectUI.gridGuilds.GetDimensions().X, (int)DTT.Instance.SelectUI.gridGuilds.GetDimensions().Height + 12);
+
+			if (IsMouseHovering)
+			{
+				Rectangle rect = new Rectangle((int)(dimensions.X + dimensions.Width + 8), (int)(dimensions.Y + dimensions.Height / 2f - 16), (int)(guild.Name.Measure().X + 16), 32);
+
+				spriteBatch.DrawPanel(rect, BaseLib.Utility.Utility.backgroundTexture, BaseUI.panelColor);
+				spriteBatch.DrawPanel(rect, BaseLib.Utility.Utility.borderTexture, Color.Black);
+
+				Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, guild.Name, rect.X + 8, rect.Y + 6, color, Color.Black, Vector2.Zero);
+			}
+
 			spriteBatch.SetupForShader(DTT.circleShader);
 
-			spriteBatch.Draw(texture, new Rectangle((int)(dimensions.X + padding), (int)(dimensions.Y + padding), (int)(dimensions.Height - padding * 2), (int)(dimensions.Height - padding * 2)), Color.White);
+			spriteBatch.Draw(texture, new Rectangle((int)dimensions.X, (int)dimensions.Y, (int)dimensions.Height, (int)dimensions.Height), Color.White);
 
+			spriteBatch.GraphicsDevice.ScissorRectangle = prevRect;
 			spriteBatch.DisableScissor();
 		}
 	}

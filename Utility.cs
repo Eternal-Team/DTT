@@ -53,10 +53,19 @@ namespace DTT
 			}
 		}
 
+		public static void PremultiplyTexture(this Texture2D texture)
+		{
+			Color[] buffer = new Color[texture.Width * texture.Height];
+			texture.GetData(buffer);
+			for (int i = 0; i < buffer.Length; i++) buffer[i] = Color.FromNonPremultiplied(buffer[i].R, buffer[i].G, buffer[i].B, buffer[i].A);
+			texture.SetData(buffer);
+		}
+
 		public static Texture2D ToTexture(this string path)
 		{
 			Texture2D texture;
 			using (MemoryStream buffer = new MemoryStream(File.ReadAllBytes(path))) texture = Texture2D.FromStream(Main.instance.GraphicsDevice, buffer);
+			texture.PremultiplyTexture();
 			return texture;
 		}
 
@@ -191,21 +200,21 @@ namespace DTT
 							DownloadImage($"{DTT.Emojis}{id}.png", url, texture => emojiTexture = texture);
 							yield return new Snippet
 							{
-								Width = 20,
-								Height = 20,
+								Width = 32,
+								Height = 32,
 								X = x,
 								Y = y,
 								OnDraw = (spriteBatch, dimensions) =>
 								{
 									if (cache.ContainsKey(url) && emojiTexture != null)
 									{
-										float scale = Math.Min(20f / emojiTexture.Width, 20f / emojiTexture.Height);
+										float scale = Math.Min(32f / emojiTexture.Width, 32f / emojiTexture.Height);
 										spriteBatch.Draw(emojiTexture, dimensions.Position(), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
 									}
 								},
 								OnHover = (spriteBatch, dimensions) => { BaseLib.Utility.Utility.DrawMouseText(text); }
 							};
-							x += 20;
+							x += 40;
 							break;
 						case 4:     // Links
 							string link = text;

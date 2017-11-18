@@ -131,9 +131,21 @@ namespace DTT
 		private Task Ready(ReadyEventArgs e)
 		{
 			ErrorLogger.Log($"User [{currentClient.CurrentUser.Username}] is ready");
-
+			
 			currentGuild = config.defaultGuildID.HasValue && currentClient.Guilds.Any(x => x.Value.Id == config.defaultGuildID) ? currentClient.Guilds.First(x => x.Value.Id == config.defaultGuildID).Value : currentClient.Guilds.ElementAt(0).Value;
+			Utility.DownloadImage($"{Guilds}{currentGuild.Id}.png", currentGuild.IconUrl, texture =>
+			{
+				SelectUI.buttonGuilds.texture = texture;
+			});
 			currentChannel = config.defaultChannelID.HasValue && currentGuild.Channels.Any(x => x.Id == config.defaultChannelID.Value) ? currentGuild.Channels.First(x => x.Id == config.defaultChannelID) : currentGuild.GetDefaultChannel();
+
+			SelectUI.Load();
+			
+			string name = "#" + currentChannel.Name.Replace("_", "-");
+			SelectUI.textServer.SetText(name);
+			SelectUI.textServer.Width.Pixels = name.Measure().X;
+			SelectUI.textServer.Height.Pixels = name.Measure().Y;
+			SelectUI.textServer.Recalculate();
 
 			SelectUI.avatarUser.user = currentClient.CurrentUser;
 

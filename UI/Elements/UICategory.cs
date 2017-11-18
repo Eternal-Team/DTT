@@ -1,5 +1,4 @@
 ﻿using BaseLib.Elements;
-using BaseLib.UI;
 using BaseLib.Utility;
 using DSharpPlus.Entities;
 using Microsoft.Xna.Framework;
@@ -46,7 +45,7 @@ namespace DTT.UI.Elements
 
 			list.Width.Set(0f, 1f);
 			list.Height.Set(0f, 1f);
-			list.Top.Pixels = 44;
+			list.Top.Pixels = 24;
 			Append(list);
 
 			foreach (DiscordChannel channel in category.Children)
@@ -54,19 +53,18 @@ namespace DTT.UI.Elements
 				if (channel.CanJoin())
 				{
 					UIChannel uiChild = new UIChannel(channel);
+					uiChild.Left.Pixels = 8;
 					uiChild.Width.Set(-8, 1);
-					uiChild.Height.Pixels = 40;
-					uiChild.color = DTT.Instance.currentChannel.Id == channel.Id ? Color.Lime : Color.White;
+					uiChild.Height.Pixels = 20;
 					uiChild.OnClick += (a, b) =>
 					{
 						DTT.Instance.currentChannel = channel;
 
-						DTT.Instance.SelectUI.gridSelect.items.ForEach(x =>
-						{
-							if (x is UIChannel) ((UIChannel)x).color = Color.White;
-							else (x as UICategory)?.items.ForEach(y => ((UIChannel)y).color = Color.White);
-						});
-						uiChild.color = Color.Lime;
+						string name = "#" + channel.Name.Replace("_", "-");
+						DTT.Instance.SelectUI.textServer.SetText(name);
+						DTT.Instance.SelectUI.textServer.Width.Pixels = name.Measure().X;
+						DTT.Instance.SelectUI.textServer.Height.Pixels = name.Measure().Y;
+						DTT.Instance.SelectUI.textServer.Recalculate();
 
 						DTT.log.Clear();
 						Task<IReadOnlyList<DiscordMessage>> task = channel.GetMessagesAsync(50);
@@ -109,14 +107,14 @@ namespace DTT.UI.Elements
 		public override void Click(UIMouseEvent evt)
 		{
 			CalculatedStyle dimensions = GetDimensions();
-			Rectangle hitbox = new CalculatedStyle(dimensions.X, dimensions.Y, dimensions.Width, 40).ToRectangle();
+			Rectangle hitbox = new CalculatedStyle(dimensions.X, dimensions.Y, dimensions.Width, 20).ToRectangle();
 
 			if (hitbox.Contains(evt.MousePosition))
 			{
 				Main.PlaySound(SoundID.MenuTick);
 
 				Expand();
-				DTT.Instance.SelectUI.gridSelect.RecalculateChildren();
+				//DTT.Instance.SelectUI.gridSelect.RecalculateChildren();
 			}
 		}
 
@@ -128,7 +126,7 @@ namespace DTT.UI.Elements
 			for (int i = 0; i < items.Count; i++)
 			{
 				items[i].Top.Set(top, 0f);
-				items[i].Left.Set(0f, 0f);
+				items[i].Left.Set(8f, 0f);
 				items[i].Recalculate();
 				top += items[i].GetOuterDimensions().Height + 4f;
 			}
@@ -151,12 +149,11 @@ namespace DTT.UI.Elements
 		protected override void DrawSelf(SpriteBatch spriteBatch)
 		{
 			CalculatedStyle dimensions = GetDimensions();
-			CalculatedStyle drawDim = new CalculatedStyle(dimensions.X, dimensions.Y, dimensions.Width, 40);
 
-			spriteBatch.DrawPanel(drawDim, BaseLib.Utility.Utility.backgroundTexture, BaseUI.panelColor);
-			spriteBatch.DrawPanel(drawDim, BaseLib.Utility.Utility.borderTexture, Color.Black);
+			//spriteBatch.DrawPanel(drawDim, BaseLib.Utility.Utility.backgroundTexture, BaseUI.panelColor);
+			//spriteBatch.DrawPanel(drawDim, BaseLib.Utility.Utility.borderTexture, Color.Black);
 
-			Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, Text, drawDim.X + 8, drawDim.Y + drawDim.Height / 2 - 10f, Color.White, Color.Black, Vector2.Zero);
+			Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, Text, dimensions.X, dimensions.Y, Color.White, Color.Black, Vector2.Zero);
 		}
 	}
 }
