@@ -1,8 +1,8 @@
-﻿using Microsoft.Xna.Framework;
+﻿using BaseLib.Elements;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
-using BaseLib.Elements;
 using Terraria;
 using Terraria.GameInput;
 using Terraria.UI;
@@ -89,7 +89,6 @@ namespace DTT.UI.Elements
 			CalculatedStyle space = GetDimensions();
 
 			Utils.DrawBorderString(spriteBatch, displayString, new Vector2(space.X, space.Y + YOffset(displayString)), Color.White);
-			//if (displayString.Length == 0 && !focused) Utils.DrawBorderString(spriteBatch, hintText, new Vector2(space.X, space.Y + YOffset(hintText)), Color.Gray);
 		}
 
 		public float YOffset(string text) => backgroundPanel ? Parent.GetDimensions().Height / 2f - Main.fontMouseText.MeasureString(text).Y / 2f : 0f;
@@ -100,6 +99,7 @@ namespace DTT.UI.Elements
 			Main.chatRelease = true;
 
 			if (Main.keyState.IsKeyDown(Keys.Enter) && !Main.oldKeyState.IsKeyDown(Keys.Enter)) OnEnter?.Invoke();
+			if (Main.keyState.IsKeyDown(Keys.Escape)) Unfocus();
 
 			Main.chatRelease = false;
 		}

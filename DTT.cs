@@ -111,7 +111,12 @@ namespace DTT
 		{
 			if (e.Guild == currentGuild && e.Channel == currentChannel)
 			{
-				log.Remove(e.Message);
+				UIElement message = SelectUI.gridMessages.items.FirstOrDefault(x => ((UIMessage)x).message.Id == e.Message.Id);
+				if (message != null)
+				{
+					SelectUI.gridMessages.Remove(message);
+					SelectUI.gridMessages.RecalculateChildren();
+				}
 			}
 
 			return Task.Delay(0);
@@ -121,8 +126,18 @@ namespace DTT
 		{
 			if (e.Guild == currentGuild && e.Channel == currentChannel)
 			{
-				int index = log.FindIndex(x => x.Id == e.Message.Id);
-				if (index != -1) log[index] = e.Message;
+				int index = SelectUI.gridMessages.items.FindIndex(x => ((UIMessage)x).message.Id == e.Message.Id);
+				if (index != -1)
+				{
+					UIMessage message = new UIMessage(e.Message);
+					message.Width.Set(0f, 1f);
+					message.Height.Set(40, 0);
+					string path = $"{Users}{e.Author.Id}.png";
+					Utility.DownloadImage(path, e.Author.AvatarUrl, texture => message.avatar = texture);
+					message.RecalculateMessage();
+					SelectUI.gridMessages.Edit(message, SelectUI.gridMessages.items.FindIndex(x => ((UIMessage)x).message.Id == e.Message.Id));
+					SelectUI.gridMessages.RecalculateChildren();
+				}
 			}
 
 			return Task.Delay(0);
@@ -131,7 +146,7 @@ namespace DTT
 		private Task Ready(ReadyEventArgs e)
 		{
 			ErrorLogger.Log($"User [{currentClient.CurrentUser.Username}] is ready");
-			
+
 			currentGuild = config.defaultGuildID.HasValue && currentClient.Guilds.Any(x => x.Value.Id == config.defaultGuildID) ? currentClient.Guilds.First(x => x.Value.Id == config.defaultGuildID).Value : currentClient.Guilds.ElementAt(0).Value;
 			Utility.DownloadImage($"{Guilds}{currentGuild.Id}.png", currentGuild.IconUrl, texture =>
 			{
@@ -140,7 +155,7 @@ namespace DTT
 			currentChannel = config.defaultChannelID.HasValue && currentGuild.Channels.Any(x => x.Id == config.defaultChannelID.Value) ? currentGuild.Channels.First(x => x.Id == config.defaultChannelID) : currentGuild.GetDefaultChannel();
 
 			SelectUI.Load();
-			
+
 			string name = "#" + currentChannel.Name.Replace("_", "-");
 			SelectUI.textServer.SetText(name);
 			SelectUI.textServer.Width.Pixels = name.Measure().X;

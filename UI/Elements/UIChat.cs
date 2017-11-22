@@ -1,12 +1,11 @@
-﻿using System;
-using BaseLib.Elements;
+﻿using BaseLib.Elements;
 using BaseLib.Utility;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Terraria;
-using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
 
 namespace DTT.UI.Elements
@@ -15,7 +14,7 @@ namespace DTT.UI.Elements
 	{
 		public delegate bool ElementSearchMethod(UIElement element);
 
-		private class UIInnerList : BaseElement
+		public class UIInnerList : BaseElement
 		{
 			public override bool ContainsPoint(Vector2 point) => true;
 
@@ -80,6 +79,19 @@ namespace DTT.UI.Elements
 			innerList.Recalculate();
 		}
 
+		public virtual void Edit(UIElement item, int index)
+		{
+			item.Recalculate();
+			items[index] = item;
+			RecalculateChildren();
+			typeof(UIInnerList).GetField<List<UIElement>>("Elements", innerList).RemoveAt(index);
+			innerList.Append(item);
+			innerList.RecalculateChildren();
+			UpdateOrder();
+			innerList.Recalculate();
+			Main.NewText(item.GetDimensions().ToRectangle());
+		}
+
 		public virtual bool Remove(UIElement item)
 		{
 			innerList.RemoveChild(item);
@@ -100,7 +112,6 @@ namespace DTT.UI.Elements
 			innerList.Recalculate();
 			UpdateScrollbar();
 		}
-
 
 		private float target;
 		private void Lerp()

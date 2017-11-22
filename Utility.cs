@@ -11,6 +11,7 @@ using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using Terraria;
+using Terraria.ModLoader;
 using Terraria.UI;
 
 namespace DTT
@@ -24,6 +25,8 @@ namespace DTT
 
 		public static readonly List<Regex> findRegexes = new List<Regex> { new Regex(@"<#\d+>"), new Regex(@"<@&\d+>"), new Regex(@"<@\d+>"), new Regex(@"<:\w+:\d+>"), new Regex(@"\b(?:https?://|www\.)\S+\b", RegexOptions.Compiled | RegexOptions.IgnoreCase) };
 		public static readonly List<Regex> findIDRegexes = new List<Regex> { new Regex(@"(?<=<#)\d+(?=>)"), new Regex(@"(?<=<@&)\d+(?=>)"), new Regex(@"(?<=<@)\d+(?=>)"), new Regex(@"(?<=:)\d+(?=>)") };
+
+		public static readonly Regex emojiOut = new Regex(@":\w*:");
 
 		public static Dictionary<string, Texture2D> cache = new Dictionary<string, Texture2D>();
 
@@ -125,6 +128,27 @@ namespace DTT
 			}
 
 			return false;
+		}
+
+		public static string FormatMessageOut(this string text)
+		{
+			string[] words = text.Split(' ');
+			for (var i = 0; i < words.Length; i++)
+			{
+				if (emojiOut.IsMatch(words[i]))
+				{
+					try
+					{
+						DiscordEmoji emoji = DiscordEmoji.FromName(DTT.Instance.currentClient, words[i]);
+						words[i] = $"<:{emoji.Name}:{emoji.Id}>";
+					}
+					catch
+					{
+					}
+				}
+			}
+
+			return words.Aggregate((x, y) => x + " " + y);
 		}
 
 		public static IEnumerable<Snippet> FormatMessage(this string stringToSplit, float maxLineLength)

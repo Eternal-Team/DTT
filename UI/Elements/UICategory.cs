@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Terraria;
 using Terraria.ID;
+using Terraria.ModLoader;
 using Terraria.UI;
 
 namespace DTT.UI.Elements
@@ -53,24 +54,24 @@ namespace DTT.UI.Elements
 				if (channel.CanJoin())
 				{
 					UIChannel uiChild = new UIChannel(channel);
-					uiChild.Left.Pixels = 8;
-					uiChild.Width.Set(-8, 1);
-					uiChild.Height.Pixels = 20;
-					uiChild.OnClick += (a, b) =>
-					{
-						DTT.Instance.currentChannel = channel;
+				uiChild.Left.Pixels = 8;
+				uiChild.Width.Set(-8, 1);
+				uiChild.Height.Pixels = 20;
+				uiChild.OnClick += (a, b) =>
+				{
+					DTT.Instance.currentChannel = channel;
 
-						string name = "#" + channel.Name.Replace("_", "-");
-						DTT.Instance.SelectUI.textServer.SetText(name);
-						DTT.Instance.SelectUI.textServer.Width.Pixels = name.Measure().X;
-						DTT.Instance.SelectUI.textServer.Height.Pixels = name.Measure().Y;
-						DTT.Instance.SelectUI.textServer.Recalculate();
+					string name = "#" + channel.Name.Replace("_", "-");
+					DTT.Instance.SelectUI.textServer.SetText(name);
+					DTT.Instance.SelectUI.textServer.Width.Pixels = name.Measure().X;
+					DTT.Instance.SelectUI.textServer.Height.Pixels = name.Measure().Y;
+					DTT.Instance.SelectUI.textServer.Recalculate();
 
-						DTT.log.Clear();
-						Task<IReadOnlyList<DiscordMessage>> task = channel.GetMessagesAsync(50);
-						task.ContinueWith(t => DTT.log.AddRange(t.Result.ToList()));
-					};
-					Add(uiChild);
+					DTT.Instance.SelectUI.gridMessages.Clear();
+					Task<IReadOnlyList<DiscordMessage>> task = channel.GetMessagesAsync(50);
+					task.ContinueWith(t => DTT.log.AddRange(t.Result.ToList()));
+				};
+				Add(uiChild);
 				}
 			}
 		}

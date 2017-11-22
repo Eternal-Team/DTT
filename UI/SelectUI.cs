@@ -20,14 +20,10 @@ namespace DTT.UI
 		public UIRoundImage buttonGuilds = new UIRoundImage(DTT.defaultIcon);
 		public UIText textServer = new UIText("");
 
-		//public UITextButton buttonGuilds = new UITextButton("Guilds");
-		//public UITextButton buttonServers = new UITextButton("Channels");
-		//public UITextButton buttonPMs = new UITextButton("PMs");
-
-		public UIGrid gridGuilds = new UIGrid();
+		public UIReverseGrid gridGuilds = new UIReverseGrid();
 		public UIScrollbar barGuilds = new UIScrollbar();
 
-		public UIGrid gridChannels = new UIGrid();
+		public UIReverseGrid gridChannels = new UIReverseGrid();
 		public UIScrollbar barChannels = new UIScrollbar();
 
 		public UIPanel panelMessages = new UIPanel();
@@ -104,7 +100,8 @@ namespace DTT.UI
 			{
 				if (!string.IsNullOrEmpty(inputMessages.GetText()))
 				{
-					await DTT.Instance.currentClient.SendMessageAsync(DTT.Instance.currentChannel, inputMessages.GetText());
+					string message = inputMessages.GetText().FormatMessageOut();
+					await DTT.Instance.currentClient.SendMessageAsync(DTT.Instance.currentChannel, message);
 					inputMessages.currentString = "";
 				}
 			};
@@ -147,6 +144,7 @@ namespace DTT.UI
 					textServer.Recalculate();
 
 					InitializeChannels();
+					gridMessages.Clear();
 				};
 				string path = $"{DTT.Guilds}{guild.Id}.png";
 				Utility.DownloadImage(path, guild.IconUrl, texture => uiGuild.texture = texture);
@@ -182,55 +180,16 @@ namespace DTT.UI
 						textServer.Height.Pixels = name.Measure().Y;
 						textServer.Recalculate();
 
-						DTT.log.Clear();
-						Task<IReadOnlyList<DiscordMessage>> task = channel.GetMessagesAsync(50);
-						task.ContinueWith(t => DTT.log.AddRange(t.Result.ToList()));
+						gridMessages.Clear();
+
+						//Task<IReadOnlyList<DiscordMessage>> task = channel.GetMessagesAsync(50);
+						//task.ContinueWith(t => DTT.log.AddRange(t.Result.ToList()));
 					};
 					gridChannels.Add(uiChild);
 				}
 			}
 		}
-
-		//private void ButtonServers_OnClick(UIMouseEvent evt, UIElement listeningElement)
-		//{
-		//	OpenPanel(listeningElement);
-
-		//	gridSelect.Clear();
-		//	foreach (DiscordChannel channel in DTT.Instance.currentGuild.Channels)
-		//	{
-		//		if (channel.IsCategory && channel.Children.Any(x => x.CanJoin()))
-		//		{
-		//			UICategory uiCategory = new UICategory(channel);
-		//			uiCategory.Width.Precent = 1;
-		//			uiCategory.Height.Pixels = 40;
-		//			gridSelect.Add(uiCategory);
-		//		}
-		//		else if (!channel.IsCategory && !channel.ParentId.HasValue && channel.CanJoin())
-		//		{
-		//			UIChannel uiChild = new UIChannel(channel);
-		//			uiChild.Width.Precent = 1;
-		//			uiChild.Height.Pixels = 40;
-		//			uiChild.color = DTT.Instance.currentChannel.Id == channel.Id ? Color.Lime : Color.White;
-		//			uiChild.OnClick += (a, b) =>
-		//			{
-		//				DTT.Instance.currentChannel = uiChild.channel;
-
-		//				gridSelect.items.ForEach(x =>
-		//				{
-		//					if (x is UIChannel) ((UIChannel)x).color = Color.White;
-		//					else (x as UICategory)?.items.ForEach(y => ((UIChannel)y).color = Color.White);
-		//				});
-		//				uiChild.color = Color.Lime;
-
-		//				DTT.log.Clear();
-		//				Task<IReadOnlyList<DiscordMessage>> task = channel.GetMessagesAsync(50);
-		//				task.ContinueWith(t => DTT.log.AddRange(t.Result.ToList()));
-		//			};
-		//			gridSelect.Add(uiChild);
-		//		}
-		//	}
-		//}
-
+		
 		//private void ButtonPMs_OnClick(UIMouseEvent evt, UIElement listeningElement)
 		//{
 		//	OpenPanel(listeningElement);
