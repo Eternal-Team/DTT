@@ -41,17 +41,18 @@
     <Reference Include="Microsoft.Xna.Framework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553" />
     <Reference Include="Microsoft.Xna.Framework.Game, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553" />
     <Reference Include="Microsoft.Xna.Framework.Graphics, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86" />
-    <Reference Include="NamedPipeWrapper, Version=1.5.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NamedPipeWrapper.1.5.0\lib\net40\NamedPipeWrapper.dll</HintPath>
-    </Reference>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="ReLogic, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" />
+    <Reference Include="Svg, Version=2.2.1.39233, Culture=neutral, PublicKeyToken=12a0bac221edeae2, processorArchitecture=MSIL">
+      <HintPath>..\packages\Svg.2.3.0\lib\net35\Svg.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
+    <Reference Include="System.Xml" />
     <Reference Include="Terraria">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Terraria Modded\Terraria.exe</HintPath>
     </Reference>

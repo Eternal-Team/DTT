@@ -9,4 +9,4 @@ buildIgnore = *.csproj, *.user, obj\*, bin\*, .vs\*
 includePDB = true
 languageVersion = 6
 modReferences = BaseLib
-dllReferences = DSharpPlus, Newtonsoft.Json, NamedPipeWrapper
+dllReferences = DSharpPlus, Newtonsoft.Json, Svg, System.XML
