@@ -26,7 +26,7 @@ namespace DTT.UI.Elements
 				{
 					UIElement current = Elements[i];
 					Vector2 position2 = current.GetDimensions().Position();
-					Vector2 dimensions2 = new Vector2(current.GetDimensions().Width, current.GetDimensions().Height);
+					Vector2 dimensions2 = new Vector2(current.GetDimensions().Width, ((UIMessage)current).height);
 					if (Collision.CheckAABBvAABBCollision(position, dimensions, position2, dimensions2)) current.Draw(spriteBatch);
 				}
 			}
@@ -49,14 +49,13 @@ namespace DTT.UI.Elements
 
 		public float GetTotalHeight() => innerListHeight;
 
-		public void Goto(ElementSearchMethod searchMethod, bool center = false, bool bottom = false)
+		public void Goto(ElementSearchMethod searchMethod, bool center = false)
 		{
 			for (int i = 0; i < items.Count; i++)
 			{
 				if (searchMethod(items[i]))
 				{
 					scrollbar.ViewPosition = items[i].Top.Pixels;
-					if (bottom) scrollbar.ViewPosition = items[i].Top.Pixels + items[i].GetOuterDimensions().Height;
 					if (center) scrollbar.ViewPosition = items[i].Top.Pixels - GetInnerDimensions().Height / 2 + items[i].GetOuterDimensions().Height / 2;
 					return;
 				}
@@ -135,7 +134,7 @@ namespace DTT.UI.Elements
 		public override void RecalculateChildren()
 		{
 			base.RecalculateChildren();
-			innerListHeight = items.Select(x => x.GetDimensions().Height + ListPadding).Sum();
+			innerListHeight = items.Select(x => ((UIMessage)x).height + ListPadding).Sum();
 			float top = -innerListHeight + GetDimensions().Height;
 
 			for (int i = 0; i < items.Count; i++)
@@ -143,7 +142,7 @@ namespace DTT.UI.Elements
 				items[i].Top.Set(top, 0f);
 				items[i].Left.Set(0f, 0f);
 				items[i].Recalculate();
-				top += items[i].GetOuterDimensions().Height + ListPadding;
+				top += ((UIMessage)items[i]).height + ListPadding;
 			}
 		}
 

@@ -1,19 +1,19 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
+using DTT.UI.Elements;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Newtonsoft.Json;
+using Svg;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Text.RegularExpressions;
-using Svg;
+using System.Threading.Tasks;
 using Terraria;
-using Terraria.ModLoader;
 using Terraria.UI;
 using ImageFormat = System.Drawing.Imaging.ImageFormat;
 
@@ -1437,6 +1437,25 @@ namespace DTT
 			return false;
 		}
 
+		public static void DownloadLog(DiscordChannel channel)
+		{
+			Task<IReadOnlyList<DiscordMessage>> task = channel.GetMessagesAsync(10);
+			task.ContinueWith(t =>
+			{
+				foreach (DiscordMessage message in t.Result)
+				{
+					UIMessage uiMessage = new UIMessage(message);
+					uiMessage.Width.Set(0f, 1f);
+					uiMessage.Height.Set(40, 0);
+					string path = $"{DTT.Users}{message.Author.Id}.png";
+					DownloadImage(path, message.Author.AvatarUrl, texture => uiMessage.avatar = texture);
+					uiMessage.RecalculateMessage();
+					DTT.Instance.SelectUI.gridMessages.Add(uiMessage);
+					DTT.Instance.SelectUI.gridMessages.RecalculateChildren();
+				}
+			});
+		}
+
 		public static string FormatMessageOut(this string text)
 		{
 			string[] words = text.Split(' ');
@@ -1458,13 +1477,50 @@ namespace DTT
 			return words.Aggregate((x, y) => x + " " + y);
 		}
 
-		public static IEnumerable<Snippet> FormatMessage(this string stringToSplit, float maxLineLength)
+		public static IEnumerable<Snippet> FormatMessage(this DiscordMessage message, float maxLineLength)
 		{
 			float x = 0;
 			float y = 0;
 
-			string[] newLines = stringToSplit.Split('\n');
+			#region Header
+			string username = message.Author.Username;
+			Color color = Color.White;
+			if (message.Channel.Guild.Members.Any(z => z.Id == message.Author.Id))
+			{
+				DiscordMember member = message.Channel.Guild.Members.First(z => z.Id == message.Author.Id);
+				color = member.Color.Value.FromInt();
+				username = member.Nickname ?? member.Username;
+			}
 
+			yield return new Snippet
+			{
+				Width = Main.fontMouseText.MeasureString(username).X,
+				Height = Main.fontMouseText.MeasureString(username).Y,
+				X = x,
+				Y = y,
+				Text = username,
+				Color = color
+			};
+			x += Main.fontMouseText.MeasureString(username).X + 8;
+
+			DateTime dateTime = message.CreationTimestamp.ToLocalTime().DateTime;
+			string time = dateTime.DayOfWeek + " at " + dateTime.ToShortTimeString();
+			yield return new Snippet
+			{
+				Width = Main.fontMouseText.MeasureString(time).X * 0.7f,
+				Height = Main.fontMouseText.MeasureString(time).Y * 0.7f,
+				X = x,
+				Y = 20 * 0.3f,
+				Text = time,
+				Scale = 0.7f,
+				OnHover = (spriteBatch, dimensions) => BaseLib.Utility.Utility.DrawMouseText(dateTime)
+			};
+			x = 0;
+			y += 24;
+			#endregion
+
+			string[] newLines = message.Content.Split('\n');
+			Main.NewText(newLines.Length);
 			for (var j = 0; j < newLines.Length; j++)
 			{
 				string newLine = newLines[j];
@@ -1475,145 +1531,159 @@ namespace DTT
 					string text = words[i];
 					ulong id;
 
-					int index = findRegexes.FindIndex(z => z.IsMatch(text));
-					string unicode = text.Select(z => "\\u" + ((int)z).ToString("X4")).Aggregate((f, s) => f + s);
-					if (emojis.ContainsKey(unicode)) index = 3;
-
-					switch (index)
-					{
-						case 0:     // Channels
-							id = ulong.Parse(findIDRegexes[index].Match(text).Value);
-							DiscordChannel channel = DTT.Instance.currentGuild.Channels.First(z => z.Id == id);
-							text = $"#{channel.Name}";
-							yield return new Snippet
-							{
-								Width = Main.fontMouseText.MeasureString(text).X,
-								Height = Main.fontMouseText.MeasureString(text).Y,
-								X = x,
-								Y = y,
-								Text = text,
-								Color = new Color(105, 137, 200),
-								OnClick = () => { DTT.Instance.currentChannel = channel; }
-							};
-							break;
-						case 1:     // Roles
-							id = ulong.Parse(findIDRegexes[index].Match(text).Value);
-							DiscordRole role = DTT.Instance.currentGuild.Roles.First(z => z.Id == id);
-							text = $"@{role.Name}";
-							yield return new Snippet
-							{
-								Width = Main.fontMouseText.MeasureString(text).X,
-								Height = Main.fontMouseText.MeasureString(text).Y,
-								X = x,
-								Y = y,
-								Text = text,
-								Color = role.Color.Value.FromInt()
-							};
-							break;
-						case 2:     // Mentions
-							id = ulong.Parse(findIDRegexes[index].Match(text).Value);
-							DiscordMember member = DTT.Instance.currentGuild.Members.First(z => z.Id == id);
-							text = $"@{member.DisplayName}";
-							yield return new Snippet
-							{
-								Width = Main.fontMouseText.MeasureString(text).X,
-								Height = Main.fontMouseText.MeasureString(text).Y,
-								X = x,
-								Y = y,
-								Text = text,
-								Color = member.Color.Value.FromInt()
-							};
-							break;
-						case 3:     // Emojis
-							Texture2D emojiTexture = null;
-							if (emojis.ContainsKey(unicode))
-							{
-								string path = $"{DTT.Emojis}{unicode.Replace('\\', '-')}.png";
-
-								DownloadSvg(path, emojis[unicode], texture => emojiTexture = texture);
-
-								yield return new Snippet
-								{
-									Width = 32,
-									Height = 32,
-									X = x,
-									Y = y,
-									OnDraw = (spriteBatch, dimensions) =>
-									{
-										if (cache.ContainsKey(emojis[unicode]) && emojiTexture != null)
-										{
-											float scale = Math.Min(32f / emojiTexture.Width, 32f / emojiTexture.Height);
-											spriteBatch.Draw(emojiTexture, dimensions.Position(), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
-										}
-									},
-									OnHover = (spriteBatch, dimensions) => { BaseLib.Utility.Utility.DrawMouseText(text); }
-								};
-							}
-							else
-							{
-								id = ulong.Parse(findIDRegexes[index].Match(text).Value);
-								DiscordEmoji emoji = DTT.Instance.currentGuild.Emojis.First(z => z.Id == id);
-								text = emoji.GetDiscordName();
-								string url = "https://" + $"cdn.discordapp.com/emojis/{id}.png";
-								DownloadImage($"{DTT.Emojis}{id}.png", url, texture => emojiTexture = texture);
-								yield return new Snippet
-								{
-									Width = 32,
-									Height = 32,
-									X = x,
-									Y = y,
-									OnDraw = (spriteBatch, dimensions) =>
-									{
-										if (cache.ContainsKey(url) && emojiTexture != null)
-										{
-											float scale = Math.Min(32f / emojiTexture.Width, 32f / emojiTexture.Height);
-											spriteBatch.Draw(emojiTexture, dimensions.Position(), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
-										}
-									},
-									OnHover = (spriteBatch, dimensions) => { BaseLib.Utility.Utility.DrawMouseText(text); }
-								};
-							}
-							x += 40;
-							break;
-						case 4:     // Links
-							string link = text;
-							text = "[Link]";
-							yield return new Snippet
-							{
-								Width = Main.fontMouseText.MeasureString(text).X,
-								Height = Main.fontMouseText.MeasureString(text).Y,
-								X = x,
-								Y = y,
-								Text = text,
-								Color = new Color(105, 137, 200),
-								OnHover = (spriteBatch, dimensions) => { BaseLib.Utility.Utility.DrawMouseText(link); },
-								OnClick = () => { Process.Start(link); }
-							};
-							break;
-						default:    // Other
-							yield return new Snippet
-							{
-								Width = Main.fontMouseText.MeasureString(text).X,
-								Height = Main.fontMouseText.MeasureString(text).Y,
-								X = x,
-								Y = y,
-								Text = text,
-								Color = Color.White
-							};
-							break;
-					}
-
-					if (x + Main.fontMouseText.MeasureString(text).X > maxLineLength)
+					if (x > maxLineLength)
 					{
 						x = 0;
-						y += Main.fontMouseText.MeasureString(text).Y;
+						y += 24;
 					}
 
-					if (index < 3 || index == 4) x += Main.fontMouseText.MeasureString(text).X + 8;
+					if (!string.IsNullOrWhiteSpace(text))
+					{
+						int index = findRegexes.FindIndex(z => z.IsMatch(text));
+						string unicode = text.Select(z => "\\u" + ((int)z).ToString("X4")).Aggregate((f, s) => f + s);
+						if (emojis.ContainsKey(unicode)) index = 3;
+
+						switch (index)
+						{
+							case 0:     // Channels
+								id = ulong.Parse(findIDRegexes[index].Match(text).Value);
+								DiscordChannel channel = DTT.Instance.currentGuild.Channels.First(z => z.Id == id);
+								text = $"#{channel.Name}";
+								yield return new Snippet
+								{
+									Width = Main.fontMouseText.MeasureString(text).X,
+									Height = Main.fontMouseText.MeasureString(text).Y,
+									X = x,
+									Y = y,
+									Text = text,
+									Color = new Color(105, 137, 200),
+									OnClick = () => { DTT.Instance.currentChannel = channel; }
+								};
+								break;
+							case 1:     // Roles
+								id = ulong.Parse(findIDRegexes[index].Match(text).Value);
+								DiscordRole role = DTT.Instance.currentGuild.Roles.First(z => z.Id == id);
+								text = $"@{role.Name}";
+								yield return new Snippet
+								{
+									Width = Main.fontMouseText.MeasureString(text).X,
+									Height = Main.fontMouseText.MeasureString(text).Y,
+									X = x,
+									Y = y,
+									Text = text,
+									Color = role.Color.Value.FromInt()
+								};
+								break;
+							case 2:     // Mentions
+								id = ulong.Parse(findIDRegexes[index].Match(text).Value);
+								DiscordMember member = DTT.Instance.currentGuild.Members.First(z => z.Id == id);
+								text = $"@{member.DisplayName}";
+								yield return new Snippet
+								{
+									Width = Main.fontMouseText.MeasureString(text).X,
+									Height = Main.fontMouseText.MeasureString(text).Y,
+									X = x,
+									Y = y,
+									Text = text,
+									Color = member.Color.Value.FromInt()
+								};
+								break;
+							case 3:     // Emojis
+								Texture2D emojiTexture = null;
+								if (emojis.ContainsKey(unicode))
+								{
+									string path = $"{DTT.Emojis}{unicode.Replace('\\', '-')}.png";
+
+									DownloadSvg(path, emojis[unicode], texture => emojiTexture = texture);
+
+									yield return new Snippet
+									{
+										Width = 32,
+										Height = 32,
+										X = x,
+										Y = y,
+										OnDraw = (spriteBatch, dimensions) =>
+										{
+											if (cache.ContainsKey(emojis[unicode]) && emojiTexture != null)
+											{
+												float scale = Math.Min(32f / emojiTexture.Width, 32f / emojiTexture.Height);
+												Main.spriteBatch.End();
+												spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp, null, new RasterizerState { ScissorTestEnable = true }, null, Main.UIScaleMatrix);
+												spriteBatch.Draw(emojiTexture, dimensions.Position(), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+												Main.spriteBatch.End();
+												spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, Main.DefaultSamplerState, null, new RasterizerState { ScissorTestEnable = true }, null, Main.UIScaleMatrix);
+											}
+										},
+										OnHover = (spriteBatch, dimensions) => { BaseLib.Utility.Utility.DrawMouseText(text); }
+									};
+								}
+								else
+								{
+									id = ulong.Parse(findIDRegexes[index].Match(text).Value);
+									DiscordEmoji emoji = DTT.Instance.currentGuild.Emojis.FirstOrDefault(z => z.Id == id);
+									if (emoji != null)
+									{
+										text = emoji.GetDiscordName();
+										string url = "https://" + $"cdn.discordapp.com/emojis/{id}.png?size=256";
+										DownloadImage($"{DTT.Emojis}{id}.png", url, texture => emojiTexture = texture);
+										yield return new Snippet
+										{
+											Width = 32,
+											Height = 32,
+											X = x,
+											Y = y,
+											OnDraw = (spriteBatch, dimensions) =>
+											{
+												if (cache.ContainsKey(url) && emojiTexture != null)
+												{
+													float scale = Math.Min(20f / emojiTexture.Width, 20f / emojiTexture.Height);
+													Main.spriteBatch.End();
+													spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp, null, new RasterizerState { ScissorTestEnable = true }, null, Main.UIScaleMatrix);
+													spriteBatch.Draw(emojiTexture, dimensions.Position(), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+													Main.spriteBatch.End();
+													spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, Main.DefaultSamplerState, null, new RasterizerState { ScissorTestEnable = true }, null, Main.UIScaleMatrix);
+												}
+											},
+											OnHover = (spriteBatch, dimensions) => BaseLib.Utility.Utility.DrawMouseText(text)
+										};
+									}
+								}
+								x += 40;
+								break;
+							case 4:     // Links
+								string link = text;
+								text = "[Link]";
+								yield return new Snippet
+								{
+									Width = Main.fontMouseText.MeasureString(text).X,
+									Height = Main.fontMouseText.MeasureString(text).Y,
+									X = x,
+									Y = y,
+									Text = text,
+									Color = new Color(105, 137, 200),
+									OnHover = (spriteBatch, dimensions) => { BaseLib.Utility.Utility.DrawMouseText(link); },
+									OnClick = () => { Process.Start(link); }
+								};
+								break;
+							default:    // Other
+								yield return new Snippet
+								{
+									Width = Main.fontMouseText.MeasureString(text).X,
+									Height = Main.fontMouseText.MeasureString(text).Y,
+									X = x,
+									Y = y,
+									Text = text,
+									Color = Color.White
+								};
+								break;
+						}
+
+						if (index != 3) x += Main.fontMouseText.MeasureString(text).X + 8;
+					}
 				}
 
-				y += 20;
 				x = 0;
+				y += 24;
 			}
 		}
 
@@ -1627,14 +1697,14 @@ namespace DTT
 		public float Width;
 		public float Height;
 		public string Text;
-		public ulong ID;
-		public Color Color;
+		public Color Color = Color.White;
+		public float Scale = 1f;
 
 		public Action OnClick;
 		public Action<SpriteBatch, CalculatedStyle> OnHover;
 		public Action<SpriteBatch, CalculatedStyle> OnDraw;
 
-		public override string ToString() => $"X: [{X}], Y: [{Y}], Width: [{Width}], Height: [{Height}], ID: [{ID}], Text: [{Text}]";
+		public override string ToString() => $"X: [{X}], Y: [{Y}], Width: [{Width}], Height: [{Height}], Text: [{Text}]";
 
 		public Rectangle ToRectangle() => new Rectangle((int)X, (int)Y, (int)Width, (int)Height);
 	}

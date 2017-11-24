@@ -27,15 +27,16 @@ namespace DTT.UI.Elements
 		}
 
 		private Snippet[] lines;
+		public float height;
 		public DiscordMember member;
 		public void RecalculateMessage()
 		{
-			Recalculate();
-			lines = message.Content.FormatMessage(896).ToArray();
+			lines = message.FormatMessage(DTT.Instance.SelectUI.gridMessages.GetDimensions().Width - 100).ToArray();
 
-			float height = lines.Last().Y + lines.Last().Height + 24;
+			height = lines.Last().Y + lines.Last().Height;
 			if (height < 40) height = 40;
 			Height.Set(height, 0);
+			Recalculate();
 
 			if (message.Author.Presence != null && message.Author.Presence.Guild != null && message.Author.Presence.Guild.Id == DTT.Instance.currentGuild.Id) member = message.Author.Presence.Guild.Members.First(x => x.Id == message.Author.Id);
 		}
@@ -46,7 +47,7 @@ namespace DTT.UI.Elements
 
 			for (int i = 0; i < lines.Length; i++)
 			{
-				Rectangle rect = new Rectangle((int)(dimensions.X + 48 + lines[i].X), (int)(dimensions.Y + 24 + lines[i].Y), (int)lines[i].Width, (int)lines[i].Height);
+				Rectangle rect = new Rectangle((int)(dimensions.X + 48 + lines[i].X), (int)(dimensions.Y + lines[i].Y), (int)lines[i].Width, (int)lines[i].Height);
 				if (rect.Contains(evt.MousePosition) && lines[i].OnClick != null) lines[i].OnClick.Invoke();
 			}
 		}
@@ -57,24 +58,18 @@ namespace DTT.UI.Elements
 
 			spriteBatch.EnableScissor();
 
-			Color color = Color.White;
-			if (message.Channel.Guild.Members.Any(x => x.Id == message.Author.Id)) color = message.Channel.Guild.Members.First(x => x.Id == message.Author.Id).Color.Value.FromInt();
-
-			Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, member != null && member.Nickname != null ? member.Nickname : message.Author.Username, dimensions.X + 48, dimensions.Y, color, Color.Black, Vector2.Zero);
-			Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, $" - {message.CreationTimestamp.ToLocalTime().DateTime}", dimensions.X + 48 + message.Author.Username.Measure().X, dimensions.Y, Color.White, Color.Black, Vector2.Zero);
-
 			for (int i = 0; i < lines.Length; i++)
 			{
-				if (lines[i].OnDraw != null) lines[i].OnDraw.Invoke(spriteBatch, new CalculatedStyle(dimensions.X + lines[i].X + 48, dimensions.Y + lines[i].Y + 24, dimensions.Width, dimensions.Height));
-				else Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, lines[i].Text, dimensions.X + 48 + lines[i].X, dimensions.Y + 24 + lines[i].Y, lines[i].Color, Color.Black, Vector2.Zero);
+				if (lines[i].OnDraw != null) lines[i].OnDraw.Invoke(spriteBatch, new CalculatedStyle(dimensions.X + lines[i].X + 48, dimensions.Y + lines[i].Y, dimensions.Width, dimensions.Height));
+				else Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, lines[i].Text, dimensions.X + 48 + lines[i].X, dimensions.Y + lines[i].Y, lines[i].Color, Color.Black, Vector2.Zero, lines[i].Scale);
 
 				if (lines[i].OnHover != null)
 				{
-					Rectangle rect = new Rectangle((int)(dimensions.X + 48 + lines[i].X), (int)(dimensions.Y + 24 + lines[i].Y), (int)lines[i].Width, (int)lines[i].Height);
-					if (rect.Contains(Main.MouseScreen)) lines[i].OnHover.Invoke(spriteBatch, dimensions);
+					Rectangle rect = new Rectangle((int)(dimensions.X + 48 + lines[i].X), (int)(dimensions.Y + lines[i].Y), (int)lines[i].Width, (int)lines[i].Height);
+					if (rect.Intersects(dimensions.ToRectangle()) && rect.Contains(Main.MouseScreen)) lines[i].OnHover.Invoke(spriteBatch, dimensions);
 				}
 			}
-			
+
 			spriteBatch.SetupForShader(DTT.circleShader);
 
 			spriteBatch.Draw(avatar, new Rectangle((int)dimensions.X, (int)dimensions.Y, 40, 40), Color.White);

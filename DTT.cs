@@ -98,7 +98,7 @@ namespace DTT
 				message.Width.Set(0f, 1f);
 				message.Height.Set(40, 0);
 				string path = $"{Users}{e.Author.Id}.png";
-				Utility.DownloadImage(path, e.Author.AvatarUrl, texture => message.avatar = texture);
+				Utility.DownloadImage(path, e.Author.GetAvatarUrl(ImageFormat.Png, 256), texture => message.avatar = texture);
 				message.RecalculateMessage();
 				SelectUI.gridMessages.Add(message);
 				SelectUI.gridMessages.RecalculateChildren();
@@ -148,10 +148,7 @@ namespace DTT
 			ErrorLogger.Log($"User [{currentClient.CurrentUser.Username}] is ready");
 
 			currentGuild = config.defaultGuildID.HasValue && currentClient.Guilds.Any(x => x.Value.Id == config.defaultGuildID) ? currentClient.Guilds.First(x => x.Value.Id == config.defaultGuildID).Value : currentClient.Guilds.ElementAt(0).Value;
-			Utility.DownloadImage($"{Guilds}{currentGuild.Id}.png", currentGuild.IconUrl, texture =>
-			{
-				SelectUI.buttonGuilds.texture = texture;
-			});
+			Utility.DownloadImage($"{Guilds}{currentGuild.Id}.png", currentGuild.IconUrl, texture => SelectUI.buttonGuilds.texture = texture);
 			currentChannel = config.defaultChannelID.HasValue && currentGuild.Channels.Any(x => x.Id == config.defaultChannelID.Value) ? currentGuild.Channels.First(x => x.Id == config.defaultChannelID) : currentGuild.GetDefaultChannel();
 
 			SelectUI.Load();
@@ -171,6 +168,8 @@ namespace DTT
 				SelectUI.avatarUser.RecalculateChildren();
 			});
 
+			Utility.DownloadLog(currentChannel);
+			
 			return Task.Delay(0);
 		}
 	}
@@ -235,7 +234,7 @@ namespace DTT
 
 		public override void ModifyInterfaceLayers(List<GameInterfaceLayer> layers)
 		{
-			int InventoryIndex = layers.FindIndex(layer => layer.Name.Equals("Vanilla: Inventory"));
+			int InventoryIndex = layers.FindIndex(layer => layer.Name.Equals("Vanilla: Cursor"));
 			if (InventoryIndex != -1)
 			{
 				layers.Insert(InventoryIndex, new LegacyGameInterfaceLayer(

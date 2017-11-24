@@ -3,9 +3,7 @@ using BaseLib.UI;
 using BaseLib.Utility;
 using DSharpPlus.Entities;
 using DTT.UI.Elements;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
 
@@ -74,11 +72,11 @@ namespace DTT.UI
 			barChannels.SetView(100f, 1000f);
 			gridChannels.SetScrollbar(barChannels);
 
-			panelMessages.Width.Set(0, 0.7f);
+			panelMessages.Width.Set(0, 0.33f);
 			panelMessages.Height.Set(0, 0.4f);
 			panelMessages.VAlign = 0.5f;
 			panelMessages.SetPadding(0);
-			panelMessages.BackgroundColor = panelColor * 0.6f;
+			panelMessages.BackgroundColor = panelColor;
 			screen.Append(panelMessages);
 
 			gridMessages.Width.Set(-44, 1);
@@ -133,6 +131,8 @@ namespace DTT.UI
 				uiGuild.Height.Pixels = 20;
 				uiGuild.OnClick += (a, b) =>
 				{
+					gridMessages.Clear();
+
 					DTT.Instance.currentGuild = guild;
 					DTT.Instance.currentChannel = guild.GetDefaultChannel();
 
@@ -143,8 +143,8 @@ namespace DTT.UI
 					textServer.Height.Pixels = name.Measure().Y;
 					textServer.Recalculate();
 
+					Utility.DownloadLog(DTT.Instance.currentChannel);
 					InitializeChannels();
-					gridMessages.Clear();
 				};
 				string path = $"{DTT.Guilds}{guild.Id}.png";
 				Utility.DownloadImage(path, guild.IconUrl, texture => uiGuild.texture = texture);
@@ -182,14 +182,13 @@ namespace DTT.UI
 
 						gridMessages.Clear();
 
-						//Task<IReadOnlyList<DiscordMessage>> task = channel.GetMessagesAsync(50);
-						//task.ContinueWith(t => DTT.log.AddRange(t.Result.ToList()));
+						Utility.DownloadLog(channel);
 					};
 					gridChannels.Add(uiChild);
 				}
 			}
 		}
-		
+
 		//private void ButtonPMs_OnClick(UIMouseEvent evt, UIElement listeningElement)
 		//{
 		//	OpenPanel(listeningElement);
