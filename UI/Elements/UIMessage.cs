@@ -31,7 +31,7 @@ namespace DTT.UI.Elements
 		public DiscordMember member;
 		public void RecalculateMessage()
 		{
-			lines = message.FormatMessage(DTT.Instance.SelectUI.gridMessages.GetDimensions().Width - 100).ToArray();
+			lines = message.FormatMessage(DTT.Instance.MainUI.gridMessages.GetDimensions().Width - 100).ToArray();
 
 			height = lines.Last().Y + lines.Last().Height;
 			if (height < 40) height = 40;

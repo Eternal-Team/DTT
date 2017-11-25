@@ -13,43 +13,50 @@ namespace DTT.UI.Elements
 	{
 		public DiscordDmChannel channel;
 		public Texture2D texture;
-		private float padding;
 		public Color color = Color.White;
 
-		public UIDMChannel(DiscordDmChannel channel, float padding = 6f)
+		public UIDMChannel(DiscordDmChannel channel)
 		{
 			this.channel = channel;
-			this.padding = padding;
 			texture = DTT.defaultIcon;
 		}
 
 		protected override void DrawSelf(SpriteBatch spriteBatch)
 		{
 			CalculatedStyle dimensions = GetDimensions();
+			CalculatedStyle gridDim = DTT.Instance.MainUI.gridPMs.GetDimensions();
 
 			RasterizerState state = new RasterizerState { ScissorTestEnable = true };
 
 			spriteBatch.End();
 			spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, Main.DefaultSamplerState, null, state, null, Main.UIScaleMatrix);
+			Rectangle prevRect = spriteBatch.GraphicsDevice.ScissorRectangle;
+			spriteBatch.GraphicsDevice.ScissorRectangle = new Rectangle((int)gridDim.X, (int)gridDim.Y - 6, Main.screenWidth - (int)gridDim.X, (int)gridDim.Height + 12);
 
-			spriteBatch.DrawPanel(dimensions, BaseLib.Utility.Utility.backgroundTexture, BaseUI.panelColor);
-			spriteBatch.DrawPanel(dimensions, BaseLib.Utility.Utility.borderTexture, Color.Black);
-			Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, channel.Recipients[0].Username, dimensions.X + dimensions.Height, dimensions.Y + dimensions.Height / 2 - 10, color, Color.Black, Vector2.Zero);
+			if (IsMouseHovering)
+			{
+				string name = channel.Name ?? channel.Recipients[0].Username;
+				Rectangle rect = new Rectangle((int)(dimensions.X + dimensions.Width + 8), (int)(dimensions.Y + dimensions.Height / 2f - 16), (int)(name.Measure().X + 16), 32);
 
-			spriteBatch.End();
-			spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp, null, state, DTT.circleShader, Main.UIScaleMatrix);
+				spriteBatch.DrawPanel(rect, BaseLib.Utility.Utility.backgroundTexture, BaseUI.panelColor);
+				spriteBatch.DrawPanel(rect, BaseLib.Utility.Utility.borderTexture, Color.Black);
 
-			spriteBatch.Draw(texture, new Rectangle((int)(dimensions.X + padding), (int)(dimensions.Y + padding), (int)(dimensions.Height - padding * 2), (int)(dimensions.Height - padding * 2)), Color.White);
+				Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, name, rect.X + 8, rect.Y + 6, color, Color.Black, Vector2.Zero);
+			}
 
-			spriteBatch.End();
+			spriteBatch.SetupForShader(DTT.circleShader);
+
+			spriteBatch.Draw(texture, new Rectangle((int)dimensions.X, (int)dimensions.Y, (int)dimensions.Height, (int)dimensions.Height), Color.White);
+
+			spriteBatch.SetupForShader(DTT.activityShader);
 
 			Vector4 activity = channel.Recipients[0].Presence.PresenceColor().ToVector4();
 			DTT.activityShader.Parameters["drawColor"].SetValue(activity);
-			spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp, null, state, DTT.activityShader, Main.UIScaleMatrix);
 
 			int size = (int)(dimensions.Height / 4f);
-			spriteBatch.Draw(Main.magicPixel, new Rectangle((int)(dimensions.X + dimensions.Height - size - padding), (int)(dimensions.Y + dimensions.Height - size - padding), size, size), Color.White);
+			spriteBatch.Draw(Main.magicPixel, new Rectangle((int)(dimensions.X + dimensions.Height - size), (int)(dimensions.Y + dimensions.Height - size), size, size), Color.White);
 
+			spriteBatch.GraphicsDevice.ScissorRectangle = prevRect;
 			spriteBatch.DisableScissor();
 		}
 	}

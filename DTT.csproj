@@ -71,7 +71,7 @@
     <Compile Include="UI\Elements\UIScrollbarReversed.cs" />
     <Compile Include="UI\Elements\UIInput.cs" />
     <Compile Include="UI\Elements\UIUser.cs" />
-    <Compile Include="UI\SelectUI.cs" />
+    <Compile Include="UI\MainUI.cs" />
     <Compile Include="Utility.cs" />
   </ItemGroup>
   <ItemGroup>

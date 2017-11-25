@@ -5,7 +5,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Terraria;
 using Terraria.ID;
 using Terraria.UI;
@@ -58,15 +57,15 @@ namespace DTT.UI.Elements
 					uiChild.Height.Pixels = 20;
 					uiChild.OnClick += (a, b) =>
 					{
-						DTT.Instance.SelectUI.gridMessages.Clear();
+						DTT.Instance.MainUI.gridMessages.Clear();
 
 						DTT.Instance.currentChannel = channel;
 
 						string name = "#" + channel.Name.Replace("_", "-");
-						DTT.Instance.SelectUI.textServer.SetText(name);
-						DTT.Instance.SelectUI.textServer.Width.Pixels = name.Measure().X;
-						DTT.Instance.SelectUI.textServer.Height.Pixels = name.Measure().Y;
-						DTT.Instance.SelectUI.textServer.Recalculate();
+						DTT.Instance.MainUI.textCurrent.SetText(name);
+						DTT.Instance.MainUI.textCurrent.Width.Pixels = name.Measure().X;
+						DTT.Instance.MainUI.textCurrent.Height.Pixels = name.Measure().Y;
+						DTT.Instance.MainUI.textCurrent.Recalculate();
 
 						Utility.DownloadLog(channel);
 					};
@@ -114,7 +113,6 @@ namespace DTT.UI.Elements
 				Main.PlaySound(SoundID.MenuTick);
 
 				Expand();
-				//DTT.Instance.SelectUI.gridSelect.RecalculateChildren();
 			}
 		}
 
@@ -149,9 +147,6 @@ namespace DTT.UI.Elements
 		protected override void DrawSelf(SpriteBatch spriteBatch)
 		{
 			CalculatedStyle dimensions = GetDimensions();
-
-			//spriteBatch.DrawPanel(drawDim, BaseLib.Utility.Utility.backgroundTexture, BaseUI.panelColor);
-			//spriteBatch.DrawPanel(drawDim, BaseLib.Utility.Utility.borderTexture, Color.Black);
 
 			Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, Text, dimensions.X, dimensions.Y, Color.White, Color.Black, Vector2.Zero);
 		}

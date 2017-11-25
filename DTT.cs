@@ -23,6 +23,7 @@ namespace DTT
 
 		public static string SavePath => Main.SavePath + "\\DTT";
 		public static string Guilds => SavePath + "\\Cache\\Guilds\\";
+		public static string PMs => SavePath + "\\Cache\\PMs\\";
 		public static string Users => SavePath + "\\Cache\\Users\\";
 		public static string Emojis => SavePath + "\\Cache\\Emojis\\";
 		public static string ConfigPath => SavePath + "\\Config.json";
@@ -38,10 +39,11 @@ namespace DTT
 		#endregion
 
 		#region UI
-		public SelectUI SelectUI;
+		public MainUI MainUI;
 		public UserInterface ISelectUI;
 
 		public static Texture2D defaultIcon;
+		public static Texture2D friendsIcon;
 
 		public static Effect circleShader;
 		public static Effect activityShader;
@@ -92,7 +94,7 @@ namespace DTT
 
 		private Task Create(MessageCreateEventArgs e)
 		{
-			if (e.Guild == currentGuild && e.Channel == currentChannel)
+			if (e.Channel == currentChannel)
 			{
 				UIMessage message = new UIMessage(e.Message);
 				message.Width.Set(0f, 1f);
@@ -100,8 +102,8 @@ namespace DTT
 				string path = $"{Users}{e.Author.Id}.png";
 				Utility.DownloadImage(path, e.Author.GetAvatarUrl(ImageFormat.Png, 256), texture => message.avatar = texture);
 				message.RecalculateMessage();
-				SelectUI.gridMessages.Add(message);
-				SelectUI.gridMessages.RecalculateChildren();
+				MainUI.gridMessages.Add(message);
+				MainUI.gridMessages.RecalculateChildren();
 			}
 
 			return Task.Delay(0);
@@ -111,11 +113,11 @@ namespace DTT
 		{
 			if (e.Guild == currentGuild && e.Channel == currentChannel)
 			{
-				UIElement message = SelectUI.gridMessages.items.FirstOrDefault(x => ((UIMessage)x).message.Id == e.Message.Id);
+				UIElement message = MainUI.gridMessages.items.FirstOrDefault(x => ((UIMessage)x).message.Id == e.Message.Id);
 				if (message != null)
 				{
-					SelectUI.gridMessages.Remove(message);
-					SelectUI.gridMessages.RecalculateChildren();
+					MainUI.gridMessages.Remove(message);
+					MainUI.gridMessages.RecalculateChildren();
 				}
 			}
 
@@ -126,7 +128,7 @@ namespace DTT
 		{
 			if (e.Guild == currentGuild && e.Channel == currentChannel)
 			{
-				int index = SelectUI.gridMessages.items.FindIndex(x => ((UIMessage)x).message.Id == e.Message.Id);
+				int index = MainUI.gridMessages.items.FindIndex(x => ((UIMessage)x).message.Id == e.Message.Id);
 				if (index != -1)
 				{
 					UIMessage message = new UIMessage(e.Message);
@@ -135,8 +137,8 @@ namespace DTT
 					string path = $"{Users}{e.Author.Id}.png";
 					Utility.DownloadImage(path, e.Author.AvatarUrl, texture => message.avatar = texture);
 					message.RecalculateMessage();
-					SelectUI.gridMessages.Edit(message, SelectUI.gridMessages.items.FindIndex(x => ((UIMessage)x).message.Id == e.Message.Id));
-					SelectUI.gridMessages.RecalculateChildren();
+					MainUI.gridMessages.Edit(message, MainUI.gridMessages.items.FindIndex(x => ((UIMessage)x).message.Id == e.Message.Id));
+					MainUI.gridMessages.RecalculateChildren();
 				}
 			}
 
@@ -148,28 +150,30 @@ namespace DTT
 			ErrorLogger.Log($"User [{currentClient.CurrentUser.Username}] is ready");
 
 			currentGuild = config.defaultGuildID.HasValue && currentClient.Guilds.Any(x => x.Value.Id == config.defaultGuildID) ? currentClient.Guilds.First(x => x.Value.Id == config.defaultGuildID).Value : currentClient.Guilds.ElementAt(0).Value;
-			Utility.DownloadImage($"{Guilds}{currentGuild.Id}.png", currentGuild.IconUrl, texture => SelectUI.buttonGuilds.texture = texture);
+			Utility.DownloadImage($"{Guilds}{currentGuild.Id}.png", currentGuild.IconUrl, texture => MainUI.buttonGuilds.texture = texture);
 			currentChannel = config.defaultChannelID.HasValue && currentGuild.Channels.Any(x => x.Id == config.defaultChannelID.Value) ? currentGuild.Channels.First(x => x.Id == config.defaultChannelID) : currentGuild.GetDefaultChannel();
 
-			SelectUI.Load();
+			MainUI.lastIDChannel = currentChannel.Id;
+
+			MainUI.Load();
 
 			string name = "#" + currentChannel.Name.Replace("_", "-");
-			SelectUI.textServer.SetText(name);
-			SelectUI.textServer.Width.Pixels = name.Measure().X;
-			SelectUI.textServer.Height.Pixels = name.Measure().Y;
-			SelectUI.textServer.Recalculate();
+			MainUI.textCurrent.SetText(name);
+			MainUI.textCurrent.Width.Pixels = name.Measure().X;
+			MainUI.textCurrent.Height.Pixels = name.Measure().Y;
+			MainUI.textCurrent.Recalculate();
 
-			SelectUI.avatarUser.user = currentClient.CurrentUser;
+			MainUI.avatarUser.user = currentClient.CurrentUser;
 
 			string path = $"{Users}{currentClient.CurrentUser.Id}.png";
 			Utility.DownloadImage(path, currentClient.CurrentUser.AvatarUrl, texture =>
 			{
-				SelectUI.avatarUser.texture = texture;
-				SelectUI.avatarUser.RecalculateChildren();
+				MainUI.avatarUser.texture = texture;
+				MainUI.avatarUser.RecalculateChildren();
 			});
 
 			Utility.DownloadLog(currentChannel);
-			
+
 			return Task.Delay(0);
 		}
 	}
@@ -188,17 +192,17 @@ namespace DTT
 
 		public override void Load()
 		{
-			ErrorLogger.ClearLog();
-
 			Instance = this;
 
 			circleShader = GetEffect("Effects/CircleShader");
 			activityShader = GetEffect("Effects/ActivityShader");
 
 			defaultIcon = ModLoader.GetTexture("DTT/Textures/DefaultAvatar");
+			friendsIcon = ModLoader.GetTexture("DTT/Textures/PMs");
 
 			Directory.CreateDirectory(SavePath);
 			Directory.CreateDirectory(Guilds);
+			Directory.CreateDirectory(PMs);
 			Directory.CreateDirectory(Users);
 			Directory.CreateDirectory(Emojis);
 
@@ -210,10 +214,10 @@ namespace DTT
 
 			if (!Main.dedServ)
 			{
-				SelectUI = new SelectUI();
-				SelectUI.Activate();
+				MainUI = new MainUI();
+				MainUI.Activate();
 				ISelectUI = new UserInterface();
-				ISelectUI.SetState(SelectUI);
+				ISelectUI.SetState(MainUI);
 			}
 		}
 
@@ -224,8 +228,15 @@ namespace DTT
 			Utility.cache.Clear();
 
 			Guilds.CleanDir();
+			PMs.CleanDir();
 			Users.CleanDir();
 			Emojis.CleanDir();
+
+			defaultIcon = null;
+			friendsIcon = null;
+
+			activityShader = null;
+			circleShader = null;
 
 			Instance = null;
 
@@ -242,7 +253,7 @@ namespace DTT
 					delegate
 					{
 						ISelectUI.Update(Main._drawInterfaceGameTime);
-						SelectUI.Draw(Main.spriteBatch);
+						MainUI.Draw(Main.spriteBatch);
 
 						return true;
 					}, InterfaceScaleType.UI));
@@ -251,7 +262,10 @@ namespace DTT
 
 		private void OnExit(object sender, EventArgs e)
 		{
+			Utility.cache.Clear();
+
 			Guilds.CleanDir();
+			PMs.CleanDir();
 			Users.CleanDir();
 			Emojis.CleanDir();
 

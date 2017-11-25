@@ -1450,8 +1450,8 @@ namespace DTT
 					string path = $"{DTT.Users}{message.Author.Id}.png";
 					DownloadImage(path, message.Author.AvatarUrl, texture => uiMessage.avatar = texture);
 					uiMessage.RecalculateMessage();
-					DTT.Instance.SelectUI.gridMessages.Add(uiMessage);
-					DTT.Instance.SelectUI.gridMessages.RecalculateChildren();
+					DTT.Instance.MainUI.gridMessages.Add(uiMessage);
+					DTT.Instance.MainUI.gridMessages.RecalculateChildren();
 				}
 			});
 		}
@@ -1485,7 +1485,7 @@ namespace DTT
 			#region Header
 			string username = message.Author.Username;
 			Color color = Color.White;
-			if (message.Channel.Guild.Members.Any(z => z.Id == message.Author.Id))
+			if (message.Channel.Guild != null && message.Channel.Guild.Members.Any(z => z.Id == message.Author.Id))
 			{
 				DiscordMember member = message.Channel.Guild.Members.First(z => z.Id == message.Author.Id);
 				color = member.Color.Value.FromInt();
@@ -1519,16 +1519,12 @@ namespace DTT
 			y += 24;
 			#endregion
 
-			string[] newLines = message.Content.Split('\n');
-			Main.NewText(newLines.Length);
-			for (var j = 0; j < newLines.Length; j++)
+			// Body
+			foreach (string line in message.Content.Split('\n'))
 			{
-				string newLine = newLines[j];
-				string[] words = newLine.Split(' ');
-
-				for (int i = 0; i < words.Length; i++)
+				foreach (string word in line.Split(' '))
 				{
-					string text = words[i];
+					string text = word;
 					ulong id;
 
 					if (x > maxLineLength)
@@ -1557,7 +1553,7 @@ namespace DTT
 									Y = y,
 									Text = text,
 									Color = new Color(105, 137, 200),
-									OnClick = () => { DTT.Instance.currentChannel = channel; }
+									OnClick = () => DTT.Instance.currentChannel = channel
 								};
 								break;
 							case 1:     // Roles
@@ -1606,7 +1602,7 @@ namespace DTT
 										{
 											if (cache.ContainsKey(emojis[unicode]) && emojiTexture != null)
 											{
-												float scale = Math.Min(32f / emojiTexture.Width, 32f / emojiTexture.Height);
+												float scale = Math.Min(20f / emojiTexture.Width, 20f / emojiTexture.Height);
 												Main.spriteBatch.End();
 												spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp, null, new RasterizerState { ScissorTestEnable = true }, null, Main.UIScaleMatrix);
 												spriteBatch.Draw(emojiTexture, dimensions.Position(), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
@@ -1614,7 +1610,7 @@ namespace DTT
 												spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, Main.DefaultSamplerState, null, new RasterizerState { ScissorTestEnable = true }, null, Main.UIScaleMatrix);
 											}
 										},
-										OnHover = (spriteBatch, dimensions) => { BaseLib.Utility.Utility.DrawMouseText(text); }
+										OnHover = (spriteBatch, dimensions) => BaseLib.Utility.Utility.DrawMouseText(text)
 									};
 								}
 								else
@@ -1661,8 +1657,17 @@ namespace DTT
 									Y = y,
 									Text = text,
 									Color = new Color(105, 137, 200),
-									OnHover = (spriteBatch, dimensions) => { BaseLib.Utility.Utility.DrawMouseText(link); },
-									OnClick = () => { Process.Start(link); }
+									OnHover = (spriteBatch, dimensions) => BaseLib.Utility.Utility.DrawMouseText(link),
+									OnClick = () =>
+									{
+										try
+										{
+											Process.Start(link);
+										}
+										catch
+										{
+										}
+									}
 								};
 								break;
 							default:    // Other

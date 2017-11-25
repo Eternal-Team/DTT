@@ -13,13 +13,11 @@ namespace DTT.UI.Elements
 	{
 		public DiscordGuild guild;
 		public Texture2D texture;
-		private float padding;
 		public Color color = Color.White;
 
-		public UIGuild(DiscordGuild guild, float padding = 6f)
+		public UIGuild(DiscordGuild guild)
 		{
 			this.guild = guild;
-			this.padding = padding;
 			texture = DTT.defaultIcon;
 		}
 
@@ -32,7 +30,7 @@ namespace DTT.UI.Elements
 			spriteBatch.End();
 			spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, Main.DefaultSamplerState, null, state, null, Main.UIScaleMatrix);
 			Rectangle prevRect = spriteBatch.GraphicsDevice.ScissorRectangle;
-			spriteBatch.GraphicsDevice.ScissorRectangle = new Rectangle((int)DTT.Instance.SelectUI.gridGuilds.GetDimensions().X, (int)DTT.Instance.SelectUI.gridGuilds.GetDimensions().Y - 6, Main.screenWidth - (int)DTT.Instance.SelectUI.gridGuilds.GetDimensions().X, (int)DTT.Instance.SelectUI.gridGuilds.GetDimensions().Height + 12);
+			spriteBatch.GraphicsDevice.ScissorRectangle = new Rectangle((int)DTT.Instance.MainUI.gridGuilds.GetDimensions().X, (int)DTT.Instance.MainUI.gridGuilds.GetDimensions().Y - 6, Main.screenWidth - (int)DTT.Instance.MainUI.gridGuilds.GetDimensions().X, (int)DTT.Instance.MainUI.gridGuilds.GetDimensions().Height + 12);
 
 			if (IsMouseHovering)
 			{

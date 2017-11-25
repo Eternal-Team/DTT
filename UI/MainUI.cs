@@ -9,17 +9,21 @@ using Terraria.UI;
 
 namespace DTT.UI
 {
-	public class SelectUI : BaseUI
+	public class MainUI : BaseUI
 	{
 		public UIElement screen = new UIElement();
 
 		public UIUser avatarUser = new UIUser(null);
 
 		public UIRoundImage buttonGuilds = new UIRoundImage(DTT.defaultIcon);
-		public UIText textServer = new UIText("");
+		public UIRoundImage buttonPms = new UIRoundImage(DTT.friendsIcon);
+		public UIText textCurrent = new UIText("");
 
 		public UIReverseGrid gridGuilds = new UIReverseGrid();
 		public UIScrollbar barGuilds = new UIScrollbar();
+
+		public UIReverseGrid gridPMs = new UIReverseGrid();
+		public UIScrollbar barPMs = new UIScrollbar();
 
 		public UIReverseGrid gridChannels = new UIReverseGrid();
 		public UIScrollbar barChannels = new UIScrollbar();
@@ -46,22 +50,39 @@ namespace DTT.UI
 			buttonGuilds.Height.Pixels = 20;
 			buttonGuilds.Left.Pixels = 8;
 			buttonGuilds.Top.Set(-68, 1);
-			buttonGuilds.OnClick += ButtonGuilds_OnClick;
+			buttonGuilds.OnClick += GuildClick;
+			buttonGuilds.OnRightClick += SwitchGuildPM;
 			screen.Append(buttonGuilds);
 
-			textServer.Left.Pixels = 36;
-			textServer.Top.Set(-68, 1);
-			textServer.OnClick += ButtonChannels_OnClick;
-			screen.Append(textServer);
+			buttonPms.Width.Pixels = 20;
+			buttonPms.Height.Pixels = 20;
+			buttonPms.Left.Pixels = 8;
+			buttonPms.Top.Set(-68, 1);
+			buttonPms.OnClick += PMsClick;
+			buttonPms.OnRightClick += SwitchGuildPM;
 
-			gridGuilds.Height.Pixels = 212;
+			textCurrent.Left.Pixels = 36;
+			textCurrent.Top.Set(-68, 1);
+			textCurrent.OnClick += ChannelsClick;
+			screen.Append(textCurrent);
+
+			gridGuilds.Height.Pixels = 140;
 			gridGuilds.Width.Pixels = 20;
-			gridGuilds.Top.Set(-288, 1);
+			gridGuilds.Top.Set(-216, 1);
 			gridGuilds.Left.Pixels = 8;
 			gridGuilds.ListPadding = 8f;
 
 			barGuilds.SetView(100f, 1000f);
 			gridGuilds.SetScrollbar(barGuilds);
+
+			gridPMs.Height.Pixels = 140;
+			gridPMs.Width.Pixels = 20;
+			gridPMs.Top.Set(-216, 1);
+			gridPMs.Left.Pixels = 8;
+			gridPMs.ListPadding = 8f;
+
+			barPMs.SetView(100f, 1000f);
+			gridPMs.SetScrollbar(barPMs);
 
 			gridChannels.Height.Pixels = 212;
 			gridChannels.Width.Pixels = 300;
@@ -99,7 +120,9 @@ namespace DTT.UI
 				if (!string.IsNullOrEmpty(inputMessages.GetText()))
 				{
 					string message = inputMessages.GetText().FormatMessageOut();
+
 					await DTT.Instance.currentClient.SendMessageAsync(DTT.Instance.currentChannel, message);
+
 					inputMessages.currentString = "";
 				}
 			};
@@ -114,10 +137,14 @@ namespace DTT.UI
 			panelMessages.Append(barMessages);
 		}
 
+		public ulong lastIDPM;
+		public ulong lastIDChannel;
+
 		public override void Load()
 		{
 			InitializeGuilds();
 			InitializeChannels();
+			InitializePMs();
 		}
 
 		public void InitializeGuilds()
@@ -138,10 +165,10 @@ namespace DTT.UI
 
 					if (Utility.cache.ContainsKey(guild.IconUrl)) buttonGuilds.texture = Utility.cache[guild.IconUrl];
 					string name = "#" + DTT.Instance.currentChannel.Name.Replace("_", "-");
-					textServer.SetText(name);
-					textServer.Width.Pixels = name.Measure().X;
-					textServer.Height.Pixels = name.Measure().Y;
-					textServer.Recalculate();
+					textCurrent.SetText(name);
+					textCurrent.Width.Pixels = name.Measure().X;
+					textCurrent.Height.Pixels = name.Measure().Y;
+					textCurrent.Recalculate();
 
 					Utility.DownloadLog(DTT.Instance.currentChannel);
 					InitializeChannels();
@@ -149,6 +176,37 @@ namespace DTT.UI
 				string path = $"{DTT.Guilds}{guild.Id}.png";
 				Utility.DownloadImage(path, guild.IconUrl, texture => uiGuild.texture = texture);
 				gridGuilds.Add(uiGuild);
+			}
+		}
+
+		public void InitializePMs()
+		{
+			gridChannels.Clear();
+
+			foreach (DiscordDmChannel channel in DTT.Instance.currentClient.PrivateChannels)
+			{
+				UIDMChannel uiDMChannel = new UIDMChannel(channel);
+				uiDMChannel.Width.Precent = 1;
+				uiDMChannel.Height.Pixels = 20;
+				uiDMChannel.OnClick += (a, b) =>
+				{
+					gridMessages.Clear();
+
+					DTT.Instance.currentChannel = channel;
+
+					string iconURL = channel.IconUrl ?? channel.Recipients[0].AvatarUrl;
+					if (Utility.cache.ContainsKey(iconURL)) buttonPms.texture = Utility.cache[iconURL];
+					string name = channel.Name ?? channel.Recipients[0].Username;
+					textCurrent.SetText(name);
+					textCurrent.Width.Pixels = name.Measure().X;
+					textCurrent.Height.Pixels = name.Measure().Y;
+					textCurrent.Recalculate();
+
+					Utility.DownloadLog(channel);
+				};
+				string path = $"{DTT.PMs}{channel.Id}.png";
+				Utility.DownloadImage(path, channel.IconUrl ?? channel.Recipients[0].AvatarUrl, texture => uiDMChannel.texture = texture);
+				gridPMs.Add(uiDMChannel);
 			}
 		}
 
@@ -175,10 +233,10 @@ namespace DTT.UI
 						DTT.Instance.currentChannel = channel;
 
 						string name = "#" + channel.Name.Replace("_", "-");
-						textServer.SetText(name);
-						textServer.Width.Pixels = name.Measure().X;
-						textServer.Height.Pixels = name.Measure().Y;
-						textServer.Recalculate();
+						textCurrent.SetText(name);
+						textCurrent.Width.Pixels = name.Measure().X;
+						textCurrent.Height.Pixels = name.Measure().Y;
+						textCurrent.Recalculate();
 
 						gridMessages.Clear();
 
@@ -189,41 +247,75 @@ namespace DTT.UI
 			}
 		}
 
-		//private void ButtonPMs_OnClick(UIMouseEvent evt, UIElement listeningElement)
-		//{
-		//	OpenPanel(listeningElement);
+		private void SwitchGuildPM(UIMouseEvent evt, UIElement listeningElement)
+		{
+			gridMessages.Clear();
 
-		//	gridSelect.Clear();
-		//	foreach (DiscordDmChannel channel in DTT.Instance.currentClient.PrivateChannels)
-		//	{
-		//		UIDMChannel dmChannel = new UIDMChannel(channel);
-		//		dmChannel.Width.Precent = 1;
-		//		dmChannel.Height.Pixels = 40;
-		//		dmChannel.color = DTT.Instance.currentChannel.Id == channel.Id ? Color.Lime : Color.White;
-		//		dmChannel.OnClick += (a, b) =>
-		//		{
-		//			DTT.Instance.currentChannel = dmChannel.channel;
+			if (screen.HasChild(buttonGuilds))
+			{
+				lastIDChannel = DTT.Instance.currentChannel.Id;
 
-		//			gridSelect.items.ForEach(x => ((UIDMChannel)x).color = Color.White);
-		//			dmChannel.color = Color.Lime;
+				screen.RemoveChild(buttonGuilds);
+				screen.Append(buttonPms);
+				textCurrent.SetText("");
 
-		//			DTT.log.Clear();
-		//			Task<IReadOnlyList<DiscordMessage>> task = channel.GetMessagesAsync(50);
-		//			task.ContinueWith(t => DTT.log.AddRange(t.Result.ToList()));
-		//		};
-		//		string path = $"{DTT.Users}{channel.Recipients[0].Id}.png";
-		//		Utility.DownloadImage(path, channel.Recipients[0].GetAvatarUrl(ImageFormat.Png, 128), texture => dmChannel.texture = texture);
-		//		gridSelect.Add(dmChannel);
-		//	}
-		//}
+				if (DTT.Instance.currentClient.PrivateChannels.Any(x => x.Id == lastIDPM))
+				{
+					DTT.Instance.currentChannel = DTT.Instance.currentClient.PrivateChannels.First(x => x.Id == lastIDPM);
 
-		private void ButtonGuilds_OnClick(UIMouseEvent evt, UIElement listeningElement)
+					string name = DTT.Instance.currentChannel.Name ?? ((DiscordDmChannel)DTT.Instance.currentChannel).Recipients[0].Username;
+					name = name.Replace("_", "-");
+					textCurrent.SetText(name);
+					textCurrent.Width.Pixels = name.Measure().X;
+					textCurrent.Height.Pixels = name.Measure().Y;
+
+					Utility.DownloadLog(DTT.Instance.currentChannel);
+				}
+
+				textCurrent.Recalculate();
+
+				if (screen.HasChild(gridGuilds)) screen.RemoveChild(gridGuilds);
+			}
+			else if (screen.HasChild(buttonPms))
+			{
+				lastIDPM = DTT.Instance.currentChannel.Id;
+
+				screen.RemoveChild(buttonPms);
+				screen.Append(buttonGuilds);
+				textCurrent.SetText("");
+
+				if (DTT.Instance.currentGuild.Channels.Any(x => x.Id == lastIDChannel))
+				{
+					DTT.Instance.currentChannel = DTT.Instance.currentGuild.Channels.First(x => x.Id == lastIDChannel);
+
+					string name = "#" + DTT.Instance.currentChannel.Name;
+					name = name.Replace("_", "-");
+					textCurrent.SetText(name);
+					textCurrent.Width.Pixels = name.Measure().X;
+					textCurrent.Height.Pixels = name.Measure().Y;
+
+					Utility.DownloadLog(DTT.Instance.currentChannel);
+				}
+
+				textCurrent.Recalculate();
+
+				if (screen.HasChild(gridPMs)) screen.RemoveChild(gridPMs);
+			}
+		}
+
+		private void PMsClick(UIMouseEvent evt, UIElement listeningElement)
+		{
+			if (!screen.HasChild(gridPMs)) screen.Append(gridPMs);
+			else screen.RemoveChild(gridPMs);
+		}
+
+		private void GuildClick(UIMouseEvent evt, UIElement listeningElement)
 		{
 			if (!screen.HasChild(gridGuilds)) screen.Append(gridGuilds);
 			else screen.RemoveChild(gridGuilds);
 		}
 
-		private void ButtonChannels_OnClick(UIMouseEvent evt, UIElement listeningElement)
+		private void ChannelsClick(UIMouseEvent evt, UIElement listeningElement)
 		{
 			if (!screen.HasChild(gridChannels)) screen.Append(gridChannels);
 			else screen.RemoveChild(gridChannels);
