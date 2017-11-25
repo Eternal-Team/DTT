@@ -1,4 +1,5 @@
-﻿using DSharpPlus;
+﻿using BaseLib.Utility;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DTT.UI.Elements;
 using Microsoft.Xna.Framework;
@@ -1295,17 +1296,19 @@ namespace DTT
 
 	public static partial class Utility
 	{
+		#region Colors
 		private static readonly Color colorInvisibleOffline = new Color(116, 127, 141);
 		private static readonly Color colorActive = new Color(67, 181, 129);
 		private static readonly Color colorIdle = new Color(250, 166, 26);
 		private static readonly Color colorDoNotDisturb = new Color(240, 71, 71);
+		#endregion
 
 		public static readonly List<Regex> findRegexes = new List<Regex> { new Regex(@"<#\d+>"), new Regex(@"<@&\d+>"), new Regex(@"<@\d+>"), new Regex(@"<:\w+:\d+>"), new Regex(@"\b(?:https?://|www\.)\S+\b", RegexOptions.Compiled | RegexOptions.IgnoreCase) };
 		public static readonly List<Regex> findIDRegexes = new List<Regex> { new Regex(@"(?<=<#)\d+(?=>)"), new Regex(@"(?<=<@&)\d+(?=>)"), new Regex(@"(?<=<@)\d+(?=>)"), new Regex(@"(?<=:)\d+(?=>)") };
 
 		public static readonly Regex emojiOut = new Regex(@":\w*:");
 
-		public static Dictionary<string, Texture2D> cache = new Dictionary<string, Texture2D>();
+		public static Dictionary<string, Texture2D> texCache = new Dictionary<string, Texture2D>();
 
 		public static void DownloadImage(string path, string url, Action<Texture2D> action = null)
 		{
@@ -1317,19 +1320,19 @@ namespace DTT
 					client.DownloadFileCompleted += (a, b) =>
 					{
 						Texture2D texture = path.ToTexture();
-						cache[url] = texture;
+						texCache[url] = texture;
 						action?.Invoke(texture);
 					};
 				}
 			}
 			else
 			{
-				if (!cache.ContainsKey(url) && !path.IsFileLocked())
+				if (!texCache.ContainsKey(url) && !path.IsFileLocked())
 				{
-					cache[url] = path.ToTexture();
-					action?.Invoke(cache[url]);
+					texCache[url] = path.ToTexture();
+					action?.Invoke(texCache[url]);
 				}
-				else if (cache.ContainsKey(url)) action?.Invoke(cache[url]);
+				else if (texCache.ContainsKey(url)) action?.Invoke(texCache[url]);
 			}
 		}
 
@@ -1347,19 +1350,19 @@ namespace DTT
 						bitmap.Save(path, ImageFormat.Png);
 
 						Texture2D texture = path.ToTexture();
-						cache[unicode] = texture;
+						texCache[unicode] = texture;
 						action?.Invoke(texture);
 					};
 				}
 			}
 			else
 			{
-				if (!cache.ContainsKey(unicode) && !path.IsFileLocked())
+				if (!texCache.ContainsKey(unicode) && !path.IsFileLocked())
 				{
-					cache[unicode] = path.ToTexture();
-					action?.Invoke(cache[unicode]);
+					texCache[unicode] = path.ToTexture();
+					action?.Invoke(texCache[unicode]);
 				}
-				else if (cache.ContainsKey(unicode)) action?.Invoke(cache[unicode]);
+				else if (texCache.ContainsKey(unicode)) action?.Invoke(texCache[unicode]);
 			}
 		}
 
@@ -1600,7 +1603,7 @@ namespace DTT
 										Y = y,
 										OnDraw = (spriteBatch, dimensions) =>
 										{
-											if (cache.ContainsKey(emojis[unicode]) && emojiTexture != null)
+											if (texCache.ContainsKey(emojis[unicode]) && emojiTexture != null)
 											{
 												float scale = Math.Min(20f / emojiTexture.Width, 20f / emojiTexture.Height);
 												Main.spriteBatch.End();
@@ -1630,7 +1633,7 @@ namespace DTT
 											Y = y,
 											OnDraw = (spriteBatch, dimensions) =>
 											{
-												if (cache.ContainsKey(url) && emojiTexture != null)
+												if (texCache.ContainsKey(url) && emojiTexture != null)
 												{
 													float scale = Math.Min(20f / emojiTexture.Width, 20f / emojiTexture.Height);
 													Main.spriteBatch.End();
@@ -1691,8 +1694,6 @@ namespace DTT
 				y += 24;
 			}
 		}
-
-		public static Color FromInt(this int value) => value == 0 ? Color.White : new Color((value >> 16) & 0xff, (value >> 8) & 0xff, (value >> 0) & 0xff);
 	}
 
 	public class Snippet

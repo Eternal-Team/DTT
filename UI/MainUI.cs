@@ -4,6 +4,7 @@ using BaseLib.Utility;
 using DSharpPlus.Entities;
 using DTT.UI.Elements;
 using System.Linq;
+using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
 
@@ -33,6 +34,11 @@ namespace DTT.UI
 		public UIScrollbarReversed barMessages = new UIScrollbarReversed();
 		public UIPanel panelInputMessages = new UIPanel();
 		public UIInput inputMessages = new UIInput();
+
+		public UIPanel panelEdit = new UIPanel();
+
+		public ulong lastIDPM;
+		public ulong lastIDChannel;
 
 		public override void OnInitialize()
 		{
@@ -137,9 +143,6 @@ namespace DTT.UI
 			panelMessages.Append(barMessages);
 		}
 
-		public ulong lastIDPM;
-		public ulong lastIDChannel;
-
 		public override void Load()
 		{
 			InitializeGuilds();
@@ -163,7 +166,7 @@ namespace DTT.UI
 					DTT.Instance.currentGuild = guild;
 					DTT.Instance.currentChannel = guild.GetDefaultChannel();
 
-					if (Utility.cache.ContainsKey(guild.IconUrl)) buttonGuilds.texture = Utility.cache[guild.IconUrl];
+					if (Utility.texCache.ContainsKey(guild.IconUrl)) buttonGuilds.texture = Utility.texCache[guild.IconUrl];
 					string name = "#" + DTT.Instance.currentChannel.Name.Replace("_", "-");
 					textCurrent.SetText(name);
 					textCurrent.Width.Pixels = name.Measure().X;
@@ -181,7 +184,7 @@ namespace DTT.UI
 
 		public void InitializePMs()
 		{
-			gridChannels.Clear();
+			gridPMs.Clear();
 
 			foreach (DiscordDmChannel channel in DTT.Instance.currentClient.PrivateChannels)
 			{
@@ -195,7 +198,7 @@ namespace DTT.UI
 					DTT.Instance.currentChannel = channel;
 
 					string iconURL = channel.IconUrl ?? channel.Recipients[0].AvatarUrl;
-					if (Utility.cache.ContainsKey(iconURL)) buttonPms.texture = Utility.cache[iconURL];
+					if (Utility.texCache.ContainsKey(iconURL)) buttonPms.texture = Utility.texCache[iconURL];
 					string name = channel.Name ?? channel.Recipients[0].Username;
 					textCurrent.SetText(name);
 					textCurrent.Width.Pixels = name.Measure().X;
@@ -293,11 +296,10 @@ namespace DTT.UI
 					textCurrent.SetText(name);
 					textCurrent.Width.Pixels = name.Measure().X;
 					textCurrent.Height.Pixels = name.Measure().Y;
+					textCurrent.Recalculate();
 
 					Utility.DownloadLog(DTT.Instance.currentChannel);
 				}
-
-				textCurrent.Recalculate();
 
 				if (screen.HasChild(gridPMs)) screen.RemoveChild(gridPMs);
 			}
@@ -319,6 +321,46 @@ namespace DTT.UI
 		{
 			if (!screen.HasChild(gridChannels)) screen.Append(gridChannels);
 			else screen.RemoveChild(gridChannels);
+		}
+
+		public void OpenEditPanel(UIMessage message)
+		{
+			if (!screen.HasChild(panelEdit))
+			{
+				panelEdit = new UIPanel();
+				panelEdit.Width.Set(0, 0.1f);
+				panelEdit.Height.Set(0, 0.1f);
+				panelEdit.Left.Pixels = Main.mouseX;
+				panelEdit.Top.Pixels = Main.mouseY;
+				panelEdit.SetPadding(0);
+				screen.Append(panelEdit);
+
+				UITextButton buttonDelete = new UITextButton("Delete");
+				buttonDelete.Width.Set(-16, 1);
+				buttonDelete.Height.Set(-12, 0.5f);
+				buttonDelete.Left.Pixels = 8;
+				buttonDelete.Top.Pixels = 8;
+				buttonDelete.OnClick += async delegate
+				{
+					if (message.message.Author.Id == DTT.Instance.currentClient.CurrentUser.Id)
+					{
+						gridMessages.Remove(message);
+						gridMessages.RecalculateChildren();
+						screen.RemoveChild(panelEdit);
+
+						await message.message.DeleteAsync();
+					}
+				};
+				panelEdit.Append(buttonDelete);
+			}
+			else screen.RemoveChild(panelEdit);
+		}
+
+		public override void Click(UIMouseEvent evt)
+		{
+			base.Click(evt);
+
+			if (screen.HasChild(panelEdit) && screen.GetElementAt(evt.MousePosition) != panelEdit) screen.RemoveChild(panelEdit);
 		}
 	}
 }

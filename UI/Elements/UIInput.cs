@@ -1,4 +1,5 @@
 ﻿using BaseLib.Elements;
+using BaseLib.Utility;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -96,12 +97,8 @@ namespace DTT.UI.Elements
 		public bool locked;
 		public override void Update(GameTime gameTime)
 		{
-			Main.chatRelease = true;
-
-			if (Main.keyState.IsKeyDown(Keys.Enter) && !Main.oldKeyState.IsKeyDown(Keys.Enter)) OnEnter?.Invoke();
-			if (Main.keyState.IsKeyDown(Keys.Escape)) Unfocus();
-
-			Main.chatRelease = false;
+			if (Keys.Enter.IsKeyDown()) OnEnter?.Invoke();
+			if (Keys.Escape.IsKeyDown()) Unfocus();
 		}
 	}
 }

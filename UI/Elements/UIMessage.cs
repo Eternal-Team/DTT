@@ -41,8 +41,17 @@ namespace DTT.UI.Elements
 			if (message.Author.Presence != null && message.Author.Presence.Guild != null && message.Author.Presence.Guild.Id == DTT.Instance.currentGuild.Id) member = message.Author.Presence.Guild.Members.First(x => x.Id == message.Author.Id);
 		}
 
+		public override void RightClick(UIMouseEvent evt)
+		{
+			base.RightClick(evt);
+
+			DTT.UI.OpenEditPanel(this);
+		}
+
 		public override void Click(UIMouseEvent evt)
 		{
+			base.Click(evt);
+
 			CalculatedStyle dimensions = GetDimensions();
 
 			for (int i = 0; i < lines.Length; i++)

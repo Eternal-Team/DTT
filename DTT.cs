@@ -21,6 +21,8 @@ namespace DTT
 	{
 		public static DTT Instance;
 
+		public static MainUI UI => Instance.MainUI;
+
 		public static string SavePath => Main.SavePath + "\\DTT";
 		public static string Guilds => SavePath + "\\Cache\\Guilds\\";
 		public static string PMs => SavePath + "\\Cache\\PMs\\";
@@ -225,7 +227,7 @@ namespace DTT
 		{
 			Main.instance.Exiting -= OnExit;
 
-			Utility.cache.Clear();
+			Utility.texCache.Clear();
 
 			Guilds.CleanDir();
 			PMs.CleanDir();
@@ -262,7 +264,7 @@ namespace DTT
 
 		private void OnExit(object sender, EventArgs e)
 		{
-			Utility.cache.Clear();
+			Utility.texCache.Clear();
 
 			Guilds.CleanDir();
 			PMs.CleanDir();
